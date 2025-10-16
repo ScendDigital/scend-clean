@@ -1,15 +1,6 @@
 import Link from "next/link";
 
-export default function Home() {
-  <a
-    href="https://uif.scend.co.za/uif"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="text-pink-600 hover:underline"
-  >
-    UIF Tool
-  </a>
-  return (
+export default function Home() {return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="max-w-xl w-full bg-white rounded-2xl shadow p-8 text-center">
         <h1 className="text-2xl font-semibold text-scendGrey mb-2">
@@ -31,6 +22,14 @@ export default function Home() {
           >
             SARS Tax Calculator
           </Link>
+          <a
+  href="https://uif.scend.co.za/uif"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-block px-5 py-3 rounded-2xl bg-pink-100 text-pink-600 font-medium hover:bg-pink-200 transition"
+>
+  UIF Tool
+</a>
         </div>
       </div>
     </main>
