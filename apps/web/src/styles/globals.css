@@ -1,0 +1,6 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Simple Scend base styling */
+html, body { height: 100%; }
