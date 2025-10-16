@@ -1,6 +1,14 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
 export default function Home() {
+  <a
+    href="https://uif.scend.co.za/uif"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-pink-600 hover:underline"
+  >
+    UIF Tool
+  </a>
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="max-w-xl w-full bg-white rounded-2xl shadow p-8 text-center">
@@ -9,17 +17,7 @@ export default function Home() {
         </h1>
         <p className="text-gray-600 mb-6">Tools to make life simpler.</p>
 
-        {/* UIF Tool */}
-        <a
-          href="https://uif.scend.co.za/uif"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block px-5 py-3 rounded-2xl bg-scendPink text-white font-medium hover:opacity-90 transition"
-        >
-          Open UIF Payout Estimator
-        </a>
-
-        {/* Optional: Add more tools below */}
+        {/* UIF Tool */}{/* Optional: Add more tools below */}
         <div className="mt-4 flex flex-col gap-3">
           <Link
             href="/loan"
