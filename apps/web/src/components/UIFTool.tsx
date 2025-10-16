@@ -16,10 +16,10 @@ import { useState } from "react";
  * • This is an estimate; actual payouts depend on UIF assessment and prior claims.
  */
 
-const UIF_CEILING_PM = 17712;        // Monthly ceiling (R)
-const EMP_RATE = 0.01;               // Employee contribution (1%)
-const ER_RATE = 0.01;                // Employer contribution (1%)
-const MAX_CREDIT_DAYS = 365;         // Absolute max in 4-year cycle
+const UIF_CEILING_PM = 17712; // Monthly ceiling (R)
+const EMP_RATE = 0.01; // Employee contribution (1%)
+const ER_RATE = 0.01; // Employer contribution (1%)
+const MAX_CREDIT_DAYS = 365; // Absolute max in 4-year cycle
 
 // Typical claim-type caps (edit as needed)
 const CLAIM_TYPES = [
@@ -89,8 +89,13 @@ export default function UIFTool() {
     const monthlyBenefitEstimate = dailyBenefit * 30; // rough 30-day view
 
     // --- Credit Days ---
-    const approxCreditDays = Math.min(Math.floor(monthsNum * 7.5), MAX_CREDIT_DAYS);
-    const typeCap = CLAIM_TYPES.find((c) => c.value === claimType)?.capDays ?? MAX_CREDIT_DAYS;
+    const approxCreditDays = Math.min(
+      Math.floor(monthsNum * 7.5),
+      MAX_CREDIT_DAYS,
+    );
+    const typeCap =
+      CLAIM_TYPES.find((c) => c.value === claimType)?.capDays ??
+      MAX_CREDIT_DAYS;
     const creditDays = Math.min(approxCreditDays, typeCap);
 
     const totalPotentialPayout = dailyBenefit * creditDays;
@@ -145,7 +150,9 @@ export default function UIFTool() {
 
       {exceedsCeiling && (
         <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm">
-          Your salary exceeds the UIF ceiling ({formatCurrencyZAR(UIF_CEILING_PM)}). Contributions are capped at the ceiling.
+          Your salary exceeds the UIF ceiling (
+          {formatCurrencyZAR(UIF_CEILING_PM)}). Contributions are capped at the
+          ceiling.
           <div className="mt-2 flex items-center gap-2">
             <input
               id="cap-benefit"
@@ -154,7 +161,9 @@ export default function UIFTool() {
               onChange={(e) => setUseCapForBenefit(e.target.checked)}
               className="h-4 w-4"
             />
-            <label htmlFor="cap-benefit">Also cap the benefit calculation at the ceiling</label>
+            <label htmlFor="cap-benefit">
+              Also cap the benefit calculation at the ceiling
+            </label>
           </div>
         </div>
       )}
@@ -211,7 +220,8 @@ export default function UIFTool() {
             max={48}
           />
           <p className="text-xs text-gray-500 mt-1">
-            You earn ≈7.5 credit days per month worked, capped at {MAX_CREDIT_DAYS}.
+            You earn ≈7.5 credit days per month worked, capped at{" "}
+            {MAX_CREDIT_DAYS}.
           </p>
         </div>
 
