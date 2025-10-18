@@ -15,3 +15,9 @@ pnpm-debug.log*
 coverage/
 
 *.bak
+.vercel
+
+# Local noise
+apps/web/dev.log
+*.bak
+_archive/
