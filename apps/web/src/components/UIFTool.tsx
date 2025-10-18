@@ -1,250 +1,309 @@
 ﻿"use client";
 
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
 
-/**
- * UIF Estimator (Unemployment / Illness / Maternity / Adoption)
- * - Employee: 1% of remuneration (capped at UIF ceiling)
- * - Employer: 1% (capped at UIF ceiling)
- * - Earnings ceiling: R17,712 / month (editable constant)
- * - IRR sliding scale (≈38%–60%): IRR = 29.2 + (7173.92 / (DI + 232.92))
- *   where DI = Average Daily Income = (monthly income * 12) / 365
- * - Credit days: ≈7.5 per month contributed, capped by claim type and overall max
- *
- * Notes:
- * • Caps and IRR formula here are typical — adjust constants if rules change.
- * • This is an estimate; actual payouts depend on UIF assessment and prior claims.
- */
+type BenefitType = "unemployment" | "illness" | "maternity" | "adoption";
 
-const UIF_CEILING_PM = 17712; // Monthly ceiling (R)
-const EMP_RATE = 0.01; // Employee contribution (1%)
-const ER_RATE = 0.01; // Employer contribution (1%)
-const MAX_CREDIT_DAYS = 365; // Absolute max in 4-year cycle
+const ZAR = new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" });
+const AVG_DAYS_PER_MONTH = 30.4167;                      // calendar average
+const MONTHLY_THRESHOLD = 17712;                         // UIF monthly ceiling (ZAR)
+const THRESHOLD_ADR = MONTHLY_THRESHOLD / AVG_DAYS_PER_MONTH;
 
-// Typical claim-type caps (edit as needed)
-const CLAIM_TYPES = [
-  { value: "unemployment", label: "Unemployment", capDays: 365 },
-  { value: "illness", label: "Illness", capDays: 238 },
-  { value: "maternity", label: "Maternity", capDays: 121 },
-  { value: "adoption", label: "Adoption", capDays: 121 },
-] as const;
-type ClaimType = (typeof CLAIM_TYPES)[number]["value"];
-
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
+// Sliding IRR for unemployment: 60% → 38% linearly over the capped ADR
+function getSlidingIRR(adr: number) {
+  if (adr <= 0) return 0.38;
+  const ratio = Math.min(1, adr / THRESHOLD_ADR); // 0..1
+  const irr = 0.60 - 0.22 * ratio;                // 60% minus up to 22%
+  return Math.min(0.60, Math.max(0.38, irr));
 }
 
-function formatCurrencyZAR(n: number) {
-  try {
-    return new Intl.NumberFormat("en-ZA", {
-      style: "currency",
-      currency: "ZAR",
-      maximumFractionDigits: 2,
-    }).format(n);
-  } catch {
-    return `R ${n.toFixed(2)}`;
+// Credit days earned ≈ 7.5 per month worked, capped at 365
+function getCreditDays(months: number) {
+  return Math.min(365, Math.max(0, months * 7.5));
+}
+
+// UIF max days per benefit type
+function maxDaysForBenefit(type: BenefitType) {
+  switch (type) {
+    case "illness": return 238;
+    case "maternity": return 121;
+    case "adoption": return 65;
+    default: return 365; // unemployment
   }
 }
 
 export default function UIFTool() {
-  const [income, setIncome] = useState<string>("");
-  const [monthsContrib, setMonthsContrib] = useState<string>("");
-  const [claimType, setClaimType] = useState<ClaimType>("unemployment");
-  const [useCapForBenefit, setUseCapForBenefit] = useState<boolean>(false);
-  const [result, setResult] = useState<string>("");
+  const [benefit, setBenefit] = useState<BenefitType>("unemployment");
+  const [monthly, setMonthly] = useState<number>(10000);
+  const [monthsContrib, setMonthsContrib] = useState<number>(36);
+  const [showResult, setShowResult] = useState<boolean>(true); // default show (you can set false)
 
-  function calculate() {
-    const incomeNum = Number(income);
-    const monthsNum = Number(monthsContrib);
+  const calc = useMemo(() => {
+    const adrActual = monthly > 0 ? monthly / AVG_DAYS_PER_MONTH : 0;
+    const adrCapped = Math.min(adrActual, THRESHOLD_ADR);
 
-    if (
-      !Number.isFinite(incomeNum) ||
-      !Number.isFinite(monthsNum) ||
-      incomeNum <= 0 ||
-      monthsNum <= 0
-    ) {
-      setResult("Please enter valid positive numbers.");
-      return;
+    const irr =
+      benefit === "unemployment"
+        ? getSlidingIRR(adrCapped)
+        : 0.66; // ±66% commonly applied for illness/maternity/adoption
+
+    const daily = adrCapped * irr;
+    const monthlyApprox = daily * 30; // simple ~30-day view
+
+    const credits = getCreditDays(monthsContrib);
+    const cap = maxDaysForBenefit(benefit);
+    const eligible = Math.min(credits, cap);
+
+    const total = daily * eligible;
+
+    return {
+      adrActual,
+      adrCapped,
+      irr,
+      daily,
+      monthlyApprox,
+      credits,
+      cap,
+      eligible,
+      total,
+    };
+  }, [benefit, monthly, monthsContrib]);
+
+  const onCalculate = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setShowResult(true);
+  };
+
+  const onClear = () => {
+    setMonthly(0);
+    setMonthsContrib(0);
+    setBenefit("unemployment");
+    setShowResult(false);
+  };
+
+  const onExportPdf = () => {
+    // Keep it dependency-free: use browser's Print to PDF
+    window.print();
+  };
+
+  const onPrintChecklist = () => {
+    const html = `
+      <html>
+        <head>
+          <title>UIF Checklist</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; }
+            h1 { color: #d63384; }
+            h2 { margin-top: 28px; }
+            ul { margin-left: 18px; }
+            a { color: #0a58ca; }
+          </style>
+        </head>
+        <body>
+          <h1>UIF Checklist</h1>
+          <p>Print and take this along when you visit the Department of Labour.</p>
+          <h2>Documents Required</h2>
+          <ul>
+            <li>SA ID/Smart ID (or valid passport + work permit)</li>
+            <li>UI-19 — Employer declaration (employment start/end, reason for termination)</li>
+            <li>UI-2.8 — Banking details form (stamped by bank)</li>
+            <li>Recent bank statement</li>
+            <li>Payslips / proof of earnings for the last 6 months</li>
+            <li>Proof of termination (retrenchment/contract expiry/closure letter)</li>
+            <li>Illness (if applicable): Medical certificate; optionally UI-2.7</li>
+            <li>Maternity (if applicable): UI-2.3 application + doctor/midwife certificate</li>
+            <li>Adoption/Parental (if applicable): Adoption order / UI-2.9</li>
+            <li>Death (dependants): Death certificate + proof of relationship</li>
+          </ul>
+          <p><em>Tip:</em> Submit within 6 months of termination to avoid forfeiting benefits.</p>
+        </body>
+      </html>
+    `;
+    const w = window.open("", "_blank");
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+      w.focus();
+      w.print();
     }
-
-    // --- Contributions (capped at ceiling) ---
-    const cappedIncome = Math.min(incomeNum, UIF_CEILING_PM);
-    const employeeUIF = cappedIncome * EMP_RATE;
-    const employerUIF = cappedIncome * ER_RATE;
-    const totalUIF = employeeUIF + employerUIF;
-
-    // --- Daily Income & IRR ---
-    // Toggle lets the user choose whether benefit calc should also respect the ceiling.
-    const incomeForBenefit = useCapForBenefit
-      ? Math.min(incomeNum, UIF_CEILING_PM)
-      : incomeNum;
-
-    const dailyIncome = (incomeForBenefit * 12) / 365;
-
-    // Dept. of Labour IRR formula
-    let irr = 29.2 + 7173.92 / (dailyIncome + 232.92);
-    irr = clamp(irr, 38, 60);
-
-    const dailyBenefit = (irr / 100) * dailyIncome;
-    const monthlyBenefitEstimate = dailyBenefit * 30; // rough 30-day view
-
-    // --- Credit Days ---
-    const approxCreditDays = Math.min(
-      Math.floor(monthsNum * 7.5),
-      MAX_CREDIT_DAYS,
-    );
-    const typeCap =
-      CLAIM_TYPES.find((c) => c.value === claimType)?.capDays ??
-      MAX_CREDIT_DAYS;
-    const creditDays = Math.min(approxCreditDays, typeCap);
-
-    const totalPotentialPayout = dailyBenefit * creditDays;
-
-    // Build output
-    const text = [
-      `Inputs:`,
-      `• Claim type: ${CLAIM_TYPES.find((c) => c.value === claimType)?.label}`,
-      `• Average monthly salary: ${formatCurrencyZAR(incomeNum)}`,
-      `• Months contributed (last 4 years): ${monthsNum} month(s)`,
-      `${incomeNum > UIF_CEILING_PM ? `• Note: Income entered exceeds the UIF ceiling (${formatCurrencyZAR(UIF_CEILING_PM)}).` : ""}`,
-      `${useCapForBenefit ? `• Benefit calc capped at ceiling.` : `• Benefit calc NOT capped (only contributions are capped).`}`,
-      ``,
-      `UIF Contributions (per month):`,
-      `• Employee (1%): ${formatCurrencyZAR(employeeUIF)}  (capped at ${formatCurrencyZAR(UIF_CEILING_PM)})`,
-      `• Employer (1%): ${formatCurrencyZAR(employerUIF)}`,
-      `• Total: ${formatCurrencyZAR(totalUIF)}`,
-      ``,
-      `Benefit Estimate:`,
-      `• Avg Daily Income (ADI): ${formatCurrencyZAR(dailyIncome)}`,
-      `• Income Replacement Rate (IRR): ${irr.toFixed(2)}%`,
-      `• Estimated Daily Benefit: ${formatCurrencyZAR(dailyBenefit)}`,
-      `• Rough Monthly View (~30 days): ${formatCurrencyZAR(monthlyBenefitEstimate)}`,
-      ``,
-      `Claim Duration:`,
-      `• Estimated credit days (by contributions): ${approxCreditDays} day(s)`,
-      `• Claim-type cap: ${typeCap} day(s)`,
-      `• Usable credit days for this claim: ${creditDays} day(s)`,
-      `• Total Potential Payout (benefit × credit days): ${formatCurrencyZAR(totalPotentialPayout)}`,
-      ``,
-      `Disclaimer: This tool provides an estimate. Actual UIF payouts depend on UIF assessment, capped earnings, claim type rules, prior claims, and administrative decisions.`,
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    setResult(text);
-  }
-
-  function clearAll() {
-    setIncome("");
-    setMonthsContrib("");
-    setClaimType("unemployment");
-    setUseCapForBenefit(false);
-    setResult("");
-  }
-
-  const exceedsCeiling = Number(income) > UIF_CEILING_PM;
+  };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-2xl shadow">
-      <h1 className="text-2xl font-semibold mb-4">UIF Tool (Estimator)</h1>
+    <div className="space-y-6">
+      <div className="rounded-2xl border p-6">
+        <h2 className="text-2xl font-bold mb-2">UIF Tool (Estimator)</h2>
+        <p className="text-sm text-gray-600">
+          Choose a benefit type. Calculations use a sliding IRR (where applicable) and cap benefits at the UIF ceiling.
+        </p>
 
-      {exceedsCeiling && (
-        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm">
-          Your salary exceeds the UIF ceiling (
-          {formatCurrencyZAR(UIF_CEILING_PM)}). Contributions are capped at the
-          ceiling.
-          <div className="mt-2 flex items-center gap-2">
-            <input
-              id="cap-benefit"
-              type="checkbox"
-              checked={useCapForBenefit}
-              onChange={(e) => setUseCapForBenefit(e.target.checked)}
-              className="h-4 w-4"
-            />
-            <label htmlFor="cap-benefit">
-              Also cap the benefit calculation at the ceiling
-            </label>
+        <form onSubmit={onCalculate} className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="col-span-2 sm:col-span-1">
+            <label className="block text-sm font-medium mb-1">Benefit Type</label>
+            <select
+              className="w-full rounded border px-3 py-2"
+              value={benefit}
+              onChange={(e) => setBenefit(e.target.value as BenefitType)}
+            >
+              <option value="unemployment">Unemployment</option>
+              <option value="illness">Illness</option>
+              <option value="maternity">Maternity</option>
+              <option value="adoption">Adoption</option>
+            </select>
           </div>
+
+          <div className="col-span-2 sm:col-span-1">
+            <label className="block text-sm font-medium mb-1">Average Monthly Salary (ZAR)</label>
+            <input
+              type="number"
+              min={0}
+              className="w-full rounded border px-3 py-2"
+              value={monthly}
+              onChange={(e) => setMonthly(Number(e.target.value))}
+            />
+            <p className="text-xs text-gray-500 mt-1">Use average gross of last 6 months.</p>
+          </div>
+
+          <div className="col-span-2 sm:col-span-1">
+            <label className="block text-sm font-medium mb-1">Months Contributed (last 4 years)</label>
+            <input
+              type="number"
+              min={0}
+              max={48}
+              className="w-full rounded border px-3 py-2"
+              value={monthsContrib}
+              onChange={(e) => setMonthsContrib(Number(e.target.value))}
+            />
+            <p className="text-xs text-gray-500 mt-1">Earn ≈7.5 credit days/month (max 365).</p>
+          </div>
+
+          <div className="col-span-2 flex gap-2 mt-2">
+            <button
+              type="submit"
+              className="rounded-lg bg-pink-600 text-white px-4 py-2 hover:bg-pink-700"
+            >
+              Calculate
+            </button>
+            <button
+              type="button"
+              onClick={onClear}
+              className="rounded-lg border px-4 py-2"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={onExportPdf}
+              className="rounded-lg border px-4 py-2"
+            >
+              Export PDF
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {showResult && (
+        <div className="rounded-2xl border p-6">
+          <h3 className="text-xl font-semibold mb-3">Estimate</h3>
+          <div className="space-y-1 text-sm">
+            <div><strong>Benefit:</strong> {benefit}</div>
+            <div><strong>ADR (Actual):</strong> {ZAR.format(calc.adrActual)}</div>
+            <div><strong>ADR (Capped):</strong> {ZAR.format(calc.adrCapped)}</div>
+            <div><strong>IRR:</strong> {(calc.irr * 100).toFixed(2)}%</div>
+            <div><strong>Daily Benefit:</strong> {ZAR.format(calc.daily)}</div>
+            <div><strong>Monthly Benefit (~30d):</strong> {ZAR.format(calc.monthlyApprox)}</div>
+            <div><strong>Eligible Days:</strong> {calc.eligible} (credits: {calc.credits.toFixed(0)}, cap: {calc.cap})</div>
+            <div><strong>Total Potential Payout:</strong> {ZAR.format(calc.total)}</div>
+          </div>
+
+          <p className="text-xs text-gray-600 mt-3">
+            <strong>Note:</strong> “Total Potential Payout” is the cumulative amount over your eligible days; UIF pays in
+            monthly instalments, not as a once-off lump sum.
+          </p>
+
+          <p className="text-xs text-gray-600 mt-2">
+            <strong>Important:</strong> This is an estimate for planning. The Department of Labour/UIF verifies all records and has the final say.
+            Calculations use current caps and widely used UIF rules, so results should be close to what is paid.
+          </p>
         </div>
       )}
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Claim Type</label>
-          <select
-            className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-            value={claimType}
-            onChange={(e) => setClaimType(e.target.value as ClaimType)}
-          >
-            {CLAIM_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-500 mt-1">
-            Each claim type may have a different maximum number of payable days.
+      <div className="rounded-2xl border p-6">
+        <h3 className="text-xl font-semibold mb-3">Who Qualifies for UIF and When You Can Claim</h3>
+        <p className="text-sm">
+          UIF protects contributors who stop working or earning due to reasons beyond their control. You must have contributed
+          (1% employee + 1% employer) and apply within 6 months of employment ending.
+        </p>
+
+        <div className="grid gap-6 sm:grid-cols-2 mt-4">
+          <div>
+            <h4 className="font-semibold mb-2">✅ Qualifying reasons</h4>
+            <ul className="list-disc pl-5 text-sm space-y-1">
+              <li>Retrenchment or downsizing</li>
+              <li>End of fixed-term or project contract</li>
+              <li>Employer closure/liquidation, or death (domestic workers)</li>
+              <li>Illness or injury certified by a doctor</li>
+              <li>Maternity leave (up to 121 days at ±66%)</li>
+              <li>Adoption of a child under 2 years (up to 65 days at ±66%)</li>
+              <li>Death of a contributor (dependants may claim)</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold mb-2">🚫 Not covered</h4>
+            <ul className="list-disc pl-5 text-sm space-y-1">
+              <li>Voluntary resignation</li>
+              <li>Dismissal for misconduct/fraud</li>
+              <li>Absconding from work</li>
+              <li>Receiving full salary during notice or leave</li>
+              <li>Already receiving a pension/social grant replacing income</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <h4 className="font-semibold mb-2">⏳ Claim timeframes</h4>
+          <ul className="list-disc pl-5 text-sm space-y-1">
+            <li>Unemployment: up to 365 days (based on credits)</li>
+            <li>Illness: up to 238 days (medical certificate required)</li>
+            <li>Maternity: up to 121 days</li>
+            <li>Adoption: up to 65 days</li>
+            <li>Death (dependants): claim within 18 months</li>
+          </ul>
+          <p className="text-xs text-gray-600 mt-2">
+            After your benefit period ends: UIF stops paying once eligible days are used. You can claim again only after working and
+            contributing long enough to earn new credit days.
           </p>
         </div>
+      </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Average Monthly Salary (ZAR)
-          </label>
-          <input
-            type="number"
-            inputMode="decimal"
-            className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-            placeholder="e.g. 18000"
-            value={income}
-            onChange={(e) => setIncome(e.target.value)}
-            min={0}
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Use your average of the last 6 months.
-          </p>
+      <div className="rounded-2xl border p-6">
+        <h3 className="text-xl font-semibold mb-3">Documents Required Before Visiting Labour (with download links)</h3>
+        <ul className="list-disc pl-5 text-sm space-y-1">
+          <li>SA ID/Smart ID (or valid passport + work permit for foreign nationals)</li>
+          <li>UI-19 — Employer declaration (employment start/end, reason for termination). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-19</a></li>
+          <li>UI-2.8 — Banking details form (stamped by bank). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-2.8</a></li>
+          <li>Recent bank statement (shows account holder & number)</li>
+          <li>Payslips / proof of earnings for the last 6 months</li>
+          <li>Proof of termination (retrenchment/contract expiry/closure letter)</li>
+          <li>For Illness: Medical certificate; optionally UI-2.7 (income while on leave). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-2.7</a></li>
+          <li>For Maternity: UI-2.3 application + doctor/midwife certificate. <a target="_blank" rel="noreferrer noopener" href="#">Download UI-2.3</a></li>
+          <li>For Adoption/Parental: Adoption order / parental form (UI-2.9). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-2.9</a></li>
+          <li>For Death (dependants): Death certificate + proof of relationship</li>
+        </ul>
+        <p className="text-xs text-gray-600 mt-2">
+          Tip: Keep both physical and digital copies. Submit within 6 months of termination to avoid forfeiting benefits.
+        </p>
+
+        <div className="mt-4">
+          <button onClick={onPrintChecklist} className="rounded-lg border px-4 py-2">Print Checklist</button>
+          <span className="ml-3 text-sm text-gray-600">Opens a printer-friendly checklist.</span>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Months Contributed in Last 4 Years
-          </label>
-          <input
-            type="number"
-            inputMode="numeric"
-            className="w-full rounded-lg border px-3 py-2 outline-none focus:ring"
-            placeholder="e.g. 24"
-            value={monthsContrib}
-            onChange={(e) => setMonthsContrib(e.target.value)}
-            min={0}
-            max={48}
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            You earn ≈7.5 credit days per month worked, capped at{" "}
-            {MAX_CREDIT_DAYS}.
-          </p>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={calculate}
-            className="rounded-xl px-4 py-2 bg-pink-600 text-white hover:bg-pink-700"
-          >
-            Calculate
-          </button>
-          <button
-            onClick={clearAll}
-            className="rounded-xl px-4 py-2 border hover:bg-gray-50"
-          >
-            Clear
-          </button>
-        </div>
-
-        {result && (
-          <pre className="mt-4 rounded-xl bg-gray-50 border px-4 py-3 text-sm whitespace-pre-wrap">
-            {result}
-          </pre>
-        )}
+        <p className="text-sm mt-4">
+          More forms and updates:{" "}
+          <a target="_blank" rel="noreferrer noopener" href="#" className="text-blue-600 underline">
+            Department of Labour: UIF Forms
+          </a>
+        </p>
       </div>
     </div>
   );
