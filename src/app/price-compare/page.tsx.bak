@@ -1,0 +1,63 @@
+﻿"use client";
+import { useState } from "react";
+
+export default function PriceCompare() {
+  const [itemA, setItemA] = useState("");
+  const [priceA, setPriceA] = useState<number | null>(null);
+  const [itemB, setItemB] = useState("");
+  const [priceB, setPriceB] = useState<number | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+
+  const compare = () => {
+    if (!priceA || !priceB) return alert("Please enter both prices");
+
+    if (priceA < priceB) setResult(`${itemA || "Item A"} is cheaper by R ${(priceB - priceA).toFixed(2)}.`);
+    else if (priceB < priceA) setResult(`${itemB || "Item B"} is cheaper by R ${(priceA - priceB).toFixed(2)}.`);
+    else setResult("Both items cost the same.");
+  };
+
+  const clear = () => { setItemA(""); setPriceA(null); setItemB(""); setPriceB(null); setResult(null); };
+
+  return (
+    <main className="p-6 max-w-xl mx-auto">
+      <h1 className="text-2xl font-bold text-pink-600">Price Comparison Tool</h1>
+      <p className="text-gray-600 mt-1">Quickly compare two products to find the better deal.</p>
+
+      <div className="mt-6 space-y-4">
+        <div>
+          <label className="block font-medium">Item A</label>
+          <input type="text" value={itemA} onChange={(e) => setItemA(e.target.value)} className="w-full border rounded p-2" />
+          <input type="number" value={priceA ?? ""} onChange={(e) => setPriceA(parseFloat(e.target.value))}
+            className="w-full border rounded p-2 mt-1" placeholder="Price A (R)" />
+        </div>
+
+        <div>
+          <label className="block font-medium">Item B</label>
+          <input type="text" value={itemB} onChange={(e) => setItemB(e.target.value)} className="w-full border rounded p-2" />
+          <input type="number" value={priceB ?? ""} onChange={(e) => setPriceB(parseFloat(e.target.value))}
+            className="w-full border rounded p-2 mt-1" placeholder="Price B (R)" />
+        </div>
+
+        <div className="flex gap-3">
+          <button onClick={compare} className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded">Compare</button>
+          <button onClick={clear} className="border border-gray-400 px-4 py-2 rounded">Clear</button>
+        </div>
+      </div>
+
+      {result && (
+        <div className="mt-8 bg-gray-50 p-4 rounded-md shadow">
+          <p className="font-medium text-gray-800">{result}</p>
+        </div>
+      )}
+          {/* UIF estimation disclaimer */}
+      <div className="mt-10 text-xs text-gray-500 leading-relaxed">
+        <p>
+          <strong>Disclaimer:</strong> The calculations, comparisons, and timelines provided by this tool are
+          <em> estimates for guidance only</em>. The Department of Employment and Labour (DoL) or the respective financial
+          institution has the final authority on eligibility, benefit amounts, interest rates, and payout timing.
+        </p>
+      </div>
+    </main>
+  );
+}
+

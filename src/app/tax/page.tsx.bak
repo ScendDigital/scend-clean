@@ -1,0 +1,100 @@
+﻿"use client";
+import { useState } from "react";
+
+/** SARS PAYE BRACKETS (EXAMPLE) — PLEASE VERIFY for current tax year!
+ * Update BRACKETS & REBATES to the latest SARS values when you deploy.
+ * These are typical structures and may change each tax year.
+ */
+type Bracket = { upTo: number | null; base: number; rate: number; threshold: number };
+const BRACKETS: Bracket[] = [
+  { upTo: 237100,   base: 0,       rate: 0.18, threshold: 0 },
+  { upTo: 370500,   base: 42678,   rate: 0.26, threshold: 237100 },
+  { upTo: 512800,   base: 77362,   rate: 0.31, threshold: 370500 },
+  { upTo: 673000,   base: 121475,  rate: 0.36, threshold: 512800 },
+  { upTo: 857900,   base: 179147,  rate: 0.39, threshold: 673000 },
+  { upTo: 1817000,  base: 251258,  rate: 0.41, threshold: 857900 },
+  { upTo: null,     base: 644489,  rate: 0.45, threshold: 1817000 },
+];
+// Primary/secondary/tertiary rebates — VERIFY!
+const REBATE_PRIMARY = 17235;
+const REBATE_SECONDARY = 9444; // additional if age >= 65
+const REBATE_TERTIARY = 3145;  // additional if age >= 75
+
+function annualTax(gross: number): number {
+  for (const b of BRACKETS) {
+    if (b.upTo === null || gross <= b.upTo) {
+      return b.base + (gross - b.threshold) * b.rate;
+    }
+  }
+  return 0;
+}
+function rebateForAge(age: number): number {
+  if (age >= 75) return REBATE_PRIMARY + REBATE_SECONDARY + REBATE_TERTIARY;
+  if (age >= 65) return REBATE_PRIMARY + REBATE_SECONDARY;
+  return REBATE_PRIMARY;
+}
+
+export default function TaxTool() {
+  const [monthly, setMonthly] = useState<number | null>(null);
+  const [age, setAge] = useState<number>(30);
+  const [res, setRes] = useState<null | { annualTaxBefore: number; annualTaxAfter: number; monthlyPAYE: number }>(null);
+
+  const calc = () => {
+    if (monthly == null || monthly <= 0) return alert("Enter a valid monthly income");
+    const grossAnnual = monthly * 12;
+    const beforeRebate = annualTax(grossAnnual);
+    const afterRebate = Math.max(0, beforeRebate - rebateForAge(age));
+    const monthlyPAYE = afterRebate / 12;
+    setRes({ annualTaxBefore: beforeRebate, annualTaxAfter: afterRebate, monthlyPAYE });
+  };
+
+  const clear = () => { setMonthly(null); setRes(null); };
+
+  return (
+    <main className="mx-auto max-w-3xl px-4 py-8">
+      <section className="bg-white rounded-xl shadow border border-pink-200 p-6">
+        <div className="bg-pink-50 border-b-2 border-pink-500 h-2 w-full mb-4"></div>
+        <h1 className="text-2xl font-bold text-pink-600">Income Tax (PAYE) Estimator</h1>
+        <p className="text-gray-700 mt-1">Quick PAYE estimate using progressive brackets and age-based rebates. <span className="text-gray-500">Update bracket constants for the current tax year before production.</span></p>
+
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Monthly Gross Income (R)</label>
+            <input type="number" value={monthly ?? ""} onChange={(e)=>setMonthly(parseFloat(e.target.value))}
+              className="w-full border rounded p-2 text-gray-800" placeholder="e.g. 25000" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Age (for rebates)</label>
+            <input type="number" value={age} onChange={(e)=>setAge(parseInt(e.target.value || "0", 10))}
+              className="w-full border rounded p-2 text-gray-800" placeholder="e.g. 30" />
+          </div>
+        </div>
+
+        <div className="mt-4 flex gap-3">
+          <button onClick={calc} className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded">Estimate</button>
+          <button onClick={clear} className="border border-gray-400 text-gray-700 px-4 py-2 rounded hover:bg-gray-50">Clear</button>
+        </div>
+
+        {res && (
+          <div className="mt-6 bg-gray-50 p-4 rounded border border-gray-200">
+            <h2 className="font-semibold text-pink-600 mb-2">Results</h2>
+            <ul className="text-gray-800 space-y-1">
+              <li>Annual Tax (before rebates): R {res.annualTaxBefore.toFixed(2)}</li>
+              <li>Annual Tax (after rebates): <strong>R {res.annualTaxAfter.toFixed(2)}</strong></li>
+              <li>Estimated Monthly PAYE: <strong>R {res.monthlyPAYE.toFixed(2)}</strong></li>
+            </ul>
+            <p className="text-xs text-gray-500 mt-2">Notes: Excludes medical credits, retirement contributions, and allowances. Update brackets yearly.</p>
+          </div>
+        )}
+
+        {/* Scend Legal Disclaimer */}
+        <div className="mt-8 p-3 rounded-md bg-gray-50 border border-pink-300 text-xs text-gray-600 leading-relaxed">
+          <p>
+            <strong>Disclaimer:</strong> This PAYE is an <em>estimate</em>. SARS is the authority on official tax amounts and rules.
+            Please verify bracket constants before production.
+          </p>
+        </div>
+      </section>
+    </main>
+  );
+}

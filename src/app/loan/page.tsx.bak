@@ -1,0 +1,14 @@
+﻿import LoanToolClient from "./LoanToolClient";
+
+export default function LoanPage() {
+  return <LoanToolClient />;
+}
+
+{/* Scend Legal Disclaimer */}
+<div className="mt-10 p-3 rounded-md bg-gray-50 border border-pink-300 text-xs text-gray-600 leading-relaxed">
+  <p>
+    <strong>Disclaimer:</strong> The calculations and results displayed by this tool are
+    <em> estimates for guidance only</em>. The Department of Employment and Labour (DoL) or your financial
+    institution is the final authority on eligibility, benefit amounts, interest rates, and payout timing.
+  </p>
+</div>

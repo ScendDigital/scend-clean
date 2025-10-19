@@ -1,0 +1,267 @@
+﻿"use client";
+import { useState, useRef } from "react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+
+export default function UIFTool() {
+  const [salary, setSalary] = useState<number | null>(null);
+  const [months, setMonths] = useState<number | null>(null);
+  const [claimType, setClaimType] = useState<string>("");
+  const [result, setResult] = useState<any>(null);
+  const [extra, setExtra] = useState<any>(null);
+  const [busyZip, setBusyZip] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
+
+  // Put real PDFs in /public/docs matching these filenames
+  const claimInfo: Record<string, any> = {
+    Unemployment: {
+      eligible: true,
+      docs: [
+        { label: "UI-19 (Employer form)", file: "ui-19.pdf" },
+        { label: "UI-2.8 (Bank details)", file: "ui-2-8.pdf" },
+        { label: "UI-2.1 (Application form)", file: "ui-2-1.pdf" },
+        { label: "Certified ID copy", file: "id-certification.pdf" },
+        { label: "Proof of termination (e.g. retrenchment)", file: "termination-proof.pdf" },
+      ],
+      payoutTime: "± 15–25 working days after approval",
+      note: "You must be unemployed through no fault of your own (retrenchment, contract end, company closure, etc.).",
+    },
+    Maternity: {
+      eligible: true,
+      docs: [
+        { label: "UI-19", file: "ui-19.pdf" },
+        { label: "UI-2.3 (Maternity application)", file: "ui-2-3.pdf" },
+        { label: "Maternity/medical certificate", file: "maternity-certificate.pdf" },
+        { label: "Banking details (UI-2.8)", file: "ui-2-8.pdf" },
+        { label: "Certified ID copy", file: "id-certification.pdf" },
+      ],
+      payoutTime: "± 20 working days",
+      note: "Up to 17 weeks (4 months) of maternity leave covered.",
+    },
+    Illness: {
+      eligible: true,
+      docs: [
+        { label: "UI-19", file: "ui-19.pdf" },
+        { label: "UI-2.2 (Illness application)", file: "ui-2-2.pdf" },
+        { label: "Medical certificate", file: "medical-certificate.pdf" },
+        { label: "Certified ID copy", file: "id-certification.pdf" },
+        { label: "Banking details (UI-2.8)", file: "ui-2-8.pdf" },
+      ],
+      payoutTime: "± 15–30 working days",
+      note: "Eligible if you cannot work for > 14 consecutive days and employer isn’t paying.",
+    },
+    Adoption: {
+      eligible: true,
+      docs: [
+        { label: "UI-19", file: "ui-19.pdf" },
+        { label: "UI-2.4 (Adoption application)", file: "ui-2-4.pdf" },
+        { label: "Adoption order", file: "adoption-order.pdf" },
+        { label: "Certified ID copy", file: "id-certification.pdf" },
+        { label: "Banking details (UI-2.8)", file: "ui-2-8.pdf" },
+      ],
+      payoutTime: "± 20 working days",
+      note: "Only one parent may claim UIF adoption benefits for the same child.",
+    },
+    Dependants: {
+      eligible: true,
+      docs: [
+        { label: "UI-19 of deceased", file: "ui-19.pdf" },
+        { label: "UI-2.5 (Dependant application)", file: "ui-2-5.pdf" },
+        { label: "Death certificate", file: "death-certificate.pdf" },
+        { label: "Proof of dependency", file: "dependency-proof.pdf" },
+        { label: "Banking details (UI-2.8)", file: "ui-2-8.pdf" },
+      ],
+      payoutTime: "± 25–30 working days",
+      note: "Claim if you were financially dependent on the deceased contributor.",
+    },
+    Dismissal: {
+      eligible: true,
+      docs: [
+        { label: "UI-19", file: "ui-19.pdf" },
+        { label: "UI-2.1 (Application form)", file: "ui-2-1.pdf" },
+        { label: "Dismissal letter", file: "dismissal-letter.pdf" },
+        { label: "Certified ID copy", file: "id-certification.pdf" },
+        { label: "Banking details (UI-2.8)", file: "ui-2-8.pdf" },
+      ],
+      payoutTime: "± 15–25 working days",
+      note: "Eligible if dismissed (not for misconduct) or retrenched.",
+    },
+    Resignation: {
+      eligible: false,
+      docs: [],
+      payoutTime: "N/A",
+      note: "UIF does NOT cover voluntary resignation or dismissal for misconduct.",
+    },
+  };
+
+  const calculate = () => {
+    if (!salary || !months || !claimType) return alert("Please fill all fields");
+    const capped = Math.min(salary, 17712);
+    const employee = capped * 0.01;
+    const employer = capped * 0.01;
+    const total = employee + employer;
+    const irr = Math.max(0.38, Math.min(0.6, 0.38 + (17712 - capped) / 17712 * 0.22));
+    const avg = capped / 30.4;
+    const daily = avg * irr;
+    const monthly = daily * 30;
+    const days = Math.min(365, months * 7.5);
+    setResult({ capped, employee, employer, total, irr, avg, daily, monthly, days });
+    setExtra(claimInfo[claimType]);
+  };
+
+  const clear = () => { setSalary(null); setMonths(null); setClaimType(""); setResult(null); setExtra(null); };
+
+  const exportPDF = async () => {
+    if (!pdfRef.current) return;
+    const canvas = await html2canvas(pdfRef.current);
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const width = pdf.internal.pageSize.getWidth();
+    const height = (canvas.height * width) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, width, height);
+    pdf.save("UIF_Estimate_Scend.pdf");
+  };
+
+  const shareResults = () => {
+    if (!result) return alert("No results to share yet!");
+    const text = `🧾 UIF Estimate - ${claimType}
+Monthly Salary: R${salary}
+Eligible: ${extra?.eligible ? "Yes" : "No"}
+Benefit: R${result.monthly.toFixed(2)} / month
+Expected Payout: ${extra?.payoutTime}
+
+Powered by Scend.`;
+    navigator.clipboard.writeText(text);
+    alert("✅ UIF summary copied. Paste it into WhatsApp or Email!");
+  };
+
+  const downloadAll = async () => {
+    if (!extra?.docs?.length) { alert("Select a claim type first."); return; }
+    setBusyZip(true);
+    try {
+      const zip = new JSZip();
+      const folderName = `${claimType.replace(/\s+/g, "_")}_UIF_Docs`;
+      const folder = zip.folder(folderName)!;
+
+      for (const d of extra.docs as Array<{label:string; file:string}>) {
+        const url = `/docs/${d.file}`;
+        const res = await fetch(url);
+        if (!res.ok) continue; // skip missing files silently
+        const blob = await res.blob();
+        const ab = await blob.arrayBuffer();
+        folder.file(d.file, ab);
+      }
+
+      const out = await zip.generateAsync({ type: "blob" });
+      saveAs(out, `${claimType}-UIF-documents.zip`);
+    } catch {
+      alert("Could not create ZIP. Make sure the files exist in /public/docs.");
+    } finally {
+      setBusyZip(false);
+    }
+  };
+
+  return (
+    <main className="p-6 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-pink-600">UIF Tool (Smart Estimator)</h1>
+      <p className="text-gray-600 mt-1">Check UIF eligibility, required docs (downloadable), payout expectation, and estimate benefits.</p>
+
+      <div className="mt-6 space-y-4">
+        <div>
+          <label className="block font-medium">Claim Type</label>
+          <select value={claimType} onChange={(e) => setClaimType(e.target.value)} className="w-full border rounded p-2">
+            <option value="">Select claim type...</option>
+            {Object.keys(claimInfo).map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block font-medium">Average Monthly Salary (ZAR)</label>
+          <input type="number" value={salary ?? ""} onChange={(e) => setSalary(parseFloat(e.target.value))}
+            className="w-full border rounded p-2" placeholder="e.g. 10000" />
+        </div>
+
+        <div>
+          <label className="block font-medium">Months Contributed in Last 4 Years</label>
+          <input type="number" value={months ?? ""} onChange={(e) => setMonths(parseFloat(e.target.value))}
+            className="w-full border rounded p-2" placeholder="e.g. 36" />
+        </div>
+
+        <div className="flex gap-3">
+          <button onClick={calculate} className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded">Calculate</button>
+          <button onClick={clear} className="border border-gray-400 px-4 py-2 rounded">Clear</button>
+        </div>
+      </div>
+
+      <div ref={pdfRef}>
+        {extra && (
+          <div className="mt-8 p-4 rounded-md shadow bg-gray-50">
+            <h2 className="font-semibold text-lg text-pink-600 mb-2">Claim Information</h2>
+            {extra.eligible ? (
+              <>
+                <p className="text-green-700 font-medium">✅ Eligible for UIF benefits</p>
+                <p className="text-gray-700 mt-1">{extra.note}</p>
+
+                <h3 className="font-medium mt-3">Required Documents (click to download):</h3>
+                <ul className="list-disc ml-6 text-gray-700">
+                  {(extra.docs as Array<{label:string; file:string}>).map((d, i) => (
+                    <li key={i}>
+                      <a href={`/docs/${d.file}`} download className="text-pink-600 hover:text-pink-700 underline underline-offset-2" title="Download file">
+                        ⬇ {d.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+
+                <p className="mt-3"><strong>Estimated Payout Time:</strong> {extra.payoutTime}</p>
+              </>
+            ) : (
+              <p className="text-red-600 font-medium">❌ Not eligible for UIF benefits</p>
+            )}
+          </div>
+        )}
+
+        {result && extra?.eligible && (
+          <div className="mt-8 bg-gray-50 p-4 rounded-md shadow">
+            <h2 className="font-semibold text-lg mb-2 text-pink-600">Financial Estimate</h2>
+            <ul className="space-y-1 text-gray-700">
+              <li>Employee Contribution: R {result.employee.toFixed(2)}</li>
+              <li>Employer Contribution: R {result.employer.toFixed(2)}</li>
+              <li>Total Monthly UIF: R {result.total.toFixed(2)}</li>
+              <li>Avg Daily Income: R {result.avg.toFixed(2)}</li>
+              <li>Income Replacement Rate (IRR): {(result.irr * 100).toFixed(2)}%</li>
+              <li>Estimated Daily Benefit: R {result.daily.toFixed(2)}</li>
+              <li>Approx. Monthly Benefit: R {result.monthly.toFixed(2)}</li>
+              <li>Credit Days (Claim Duration): {result.days.toFixed(0)} days</li>
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {(result || extra) && (
+        <div className="flex flex-wrap gap-3 mt-6">
+          <button onClick={exportPDF} className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded">Download PDF</button>
+          <button onClick={shareResults} className="border border-gray-400 px-4 py-2 rounded">Share Results</button>
+          <button onClick={downloadAll} disabled={busyZip} className="border border-pink-600 text-pink-600 hover:bg-pink-50 px-4 py-2 rounded disabled:opacity-60">
+            {busyZip ? "Preparing ZIP..." : "Download all docs (ZIP)"}
+          </button>
+        </div>
+      )}
+
+      <p className="text-center text-gray-500 text-sm mt-10">Powered by Scend — simplifying South African financial life.</p>
+          {/* UIF estimation disclaimer */}
+      <div className="mt-10 text-xs text-gray-500 leading-relaxed">
+        <p>
+          <strong>Disclaimer:</strong> The calculations, document lists, and timelines provided by this tool are
+          <em> estimates for guidance only</em>. The Department of Employment and Labour (DoL) is the final authority on
+          eligibility, benefit amounts, required documents, and payout timing.
+        </p>
+      </div>
+    </main>
+  );
+}
+

@@ -1,0 +1,22 @@
+﻿export default function Page() {
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-16">
+      <section className="rounded-3xl border p-10 md:p-14 shadow-sm">
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+          Welcome to <span className="text-pink-500">Scend</span>
+        </h1>
+        <p className="mt-4 text-lg md:text-xl opacity-80">
+          Tools to make life simpler — from smart loan qualification and SARS tax clarity to UIF estimating
+          and price comparisons. Built for South Africans, with transparency and compliance in mind.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <a href="/loan" className="rounded-2xl border px-5 py-3 font-semibold hover:shadow">Loan Tool</a>
+          <a href="/tax" className="rounded-2xl border px-5 py-3 font-semibold hover:shadow">SARS Tax Calculator</a>
+          <a href="/uif" className="rounded-2xl border px-5 py-3 font-semibold hover:shadow">UIF Tool</a>
+          <a href="/price-compare" className="rounded-2xl border px-5 py-3 font-semibold hover:shadow">Price Compare Tool</a>
+          <a href="/contact" className="rounded-2xl border px-5 py-3 font-semibold hover:shadow">Contact Us</a>
+        </div>
+      </section>
+    </main>
+  );
+}
