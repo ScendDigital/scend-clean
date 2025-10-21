@@ -15,8 +15,13 @@
           <a href="/uif" className="rounded-2xl border px-5 py-3 font-semibold hover:shadow">UIF Tool</a>
           <a href="/price-compare" className="rounded-2xl border px-5 py-3 font-semibold hover:shadow">Price Compare Tool</a>
           <a href="/contact" className="rounded-2xl border px-5 py-3 font-semibold hover:shadow">Contact Us</a>
+  <a href="/about" className="rounded-2xl border px-6 py-3 bg-white hover:bg-pink-50 font-semibold">
+    About Us
+  </a>
         </div>
       </section>
     </main>
   );
 }
+
+

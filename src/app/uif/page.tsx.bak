@@ -1,267 +1,429 @@
 ﻿"use client";
-import { useState, useRef } from "react";
+import React, { useMemo, useState } from "react";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import JSZip from "jszip";
-import { saveAs } from "file-saver";
+import autoTable from "jspdf-autotable";
 
-export default function UIFTool() {
-  const [salary, setSalary] = useState<number | null>(null);
-  const [months, setMonths] = useState<number | null>(null);
-  const [claimType, setClaimType] = useState<string>("");
-  const [result, setResult] = useState<any>(null);
-  const [extra, setExtra] = useState<any>(null);
-  const [busyZip, setBusyZip] = useState(false);
-  const pdfRef = useRef<HTMLDivElement>(null);
+/**
+ * UIF estimator with:
+ * - Claim type dropdown + per-type document tips
+ * - Sliding scale (38–60%) for the first 0–238 days; 20% for days 239–365
+ * - Claim-type maximum payable days
+ * - DoL downtime warning (nights/weekends)
+ * - Official + mirror links
+ * - Share buttons + PDF export + Print
+ */
 
-  // Put real PDFs in /public/docs matching these filenames
-  const claimInfo: Record<string, any> = {
-    Unemployment: {
-      eligible: true,
-      docs: [
-        { label: "UI-19 (Employer form)", file: "ui-19.pdf" },
-        { label: "UI-2.8 (Bank details)", file: "ui-2-8.pdf" },
-        { label: "UI-2.1 (Application form)", file: "ui-2-1.pdf" },
-        { label: "Certified ID copy", file: "id-certification.pdf" },
-        { label: "Proof of termination (e.g. retrenchment)", file: "termination-proof.pdf" },
-      ],
-      payoutTime: "± 15–25 working days after approval",
-      note: "You must be unemployed through no fault of your own (retrenchment, contract end, company closure, etc.).",
-    },
-    Maternity: {
-      eligible: true,
-      docs: [
-        { label: "UI-19", file: "ui-19.pdf" },
-        { label: "UI-2.3 (Maternity application)", file: "ui-2-3.pdf" },
-        { label: "Maternity/medical certificate", file: "maternity-certificate.pdf" },
-        { label: "Banking details (UI-2.8)", file: "ui-2-8.pdf" },
-        { label: "Certified ID copy", file: "id-certification.pdf" },
-      ],
-      payoutTime: "± 20 working days",
-      note: "Up to 17 weeks (4 months) of maternity leave covered.",
-    },
-    Illness: {
-      eligible: true,
-      docs: [
-        { label: "UI-19", file: "ui-19.pdf" },
-        { label: "UI-2.2 (Illness application)", file: "ui-2-2.pdf" },
-        { label: "Medical certificate", file: "medical-certificate.pdf" },
-        { label: "Certified ID copy", file: "id-certification.pdf" },
-        { label: "Banking details (UI-2.8)", file: "ui-2-8.pdf" },
-      ],
-      payoutTime: "± 15–30 working days",
-      note: "Eligible if you cannot work for > 14 consecutive days and employer isn’t paying.",
-    },
-    Adoption: {
-      eligible: true,
-      docs: [
-        { label: "UI-19", file: "ui-19.pdf" },
-        { label: "UI-2.4 (Adoption application)", file: "ui-2-4.pdf" },
-        { label: "Adoption order", file: "adoption-order.pdf" },
-        { label: "Certified ID copy", file: "id-certification.pdf" },
-        { label: "Banking details (UI-2.8)", file: "ui-2-8.pdf" },
-      ],
-      payoutTime: "± 20 working days",
-      note: "Only one parent may claim UIF adoption benefits for the same child.",
-    },
-    Dependants: {
-      eligible: true,
-      docs: [
-        { label: "UI-19 of deceased", file: "ui-19.pdf" },
-        { label: "UI-2.5 (Dependant application)", file: "ui-2-5.pdf" },
-        { label: "Death certificate", file: "death-certificate.pdf" },
-        { label: "Proof of dependency", file: "dependency-proof.pdf" },
-        { label: "Banking details (UI-2.8)", file: "ui-2-8.pdf" },
-      ],
-      payoutTime: "± 25–30 working days",
-      note: "Claim if you were financially dependent on the deceased contributor.",
-    },
-    Dismissal: {
-      eligible: true,
-      docs: [
-        { label: "UI-19", file: "ui-19.pdf" },
-        { label: "UI-2.1 (Application form)", file: "ui-2-1.pdf" },
-        { label: "Dismissal letter", file: "dismissal-letter.pdf" },
-        { label: "Certified ID copy", file: "id-certification.pdf" },
-        { label: "Banking details (UI-2.8)", file: "ui-2-8.pdf" },
-      ],
-      payoutTime: "± 15–25 working days",
-      note: "Eligible if dismissed (not for misconduct) or retrenched.",
-    },
-    Resignation: {
-      eligible: false,
-      docs: [],
-      payoutTime: "N/A",
-      note: "UIF does NOT cover voluntary resignation or dismissal for misconduct.",
-    },
-  };
+type ClaimType =
+  | "unemployment"
+  | "maternity"
+  | "parental"
+  | "adoption"
+  | "illness"
+  | "reduced"
+  | "dependants";
+
+const UIF_MONTHLY_CEILING = 17712; // R per month cap
+const SLIDING_MAX_DAYS = 238;      // days on IRR sliding scale
+const GLOBAL_MAX_CREDIT_DAYS = 365;
+
+const CLAIM_LIMITS: Record<ClaimType, { label: string; maxDays: number; notes?: string }> = {
+  unemployment: { label: "Unemployment", maxDays: 365, notes: "Days 0–238 at sliding rate; 239–365 at 20%." },
+  maternity:    { label: "Maternity",    maxDays: 121, notes: "Typical max ~4 months (≈121 work days)." },
+  parental:     { label: "Parental",     maxDays: 10,  notes: "Statutory ~10 consecutive work days." },
+  adoption:     { label: "Adoption",     maxDays: 50,  notes: "Typical ~10 weeks (≈50 work days)." },
+  illness:      { label: "Illness",      maxDays: 238, notes: "Often up to 238 work days with medical proof." },
+  reduced:      { label: "Reduced Work Time", maxDays: 365, notes: "Paid for lost hours; depends on verified short time." },
+  dependants:   { label: "Dependants (death claim)", maxDays: 365, notes: "Paid to dependants; credits cap applies." },
+};
+
+// Extra documents per claim type (guidance, not exhaustive)
+const CLAIM_DOCS: Record<ClaimType, string[]> = {
+  unemployment: [
+    "UI-19 — Employer Declaration",
+    "UI-2.1 — Application for Unemployment Benefits",
+    "UI-2.7 — Employer Certificate",
+    "UI-2.8 — Banking Details (stamped by bank)",
+    "Copy of ID / Passport",
+    "Proof of termination (dismissal/retrenchment letter) if available",
+  ],
+  maternity: [
+    "UI-19 — Employer Declaration",
+    "UI-2.1 — Application for Benefits",
+    "UI-2.7 — Employer Certificate",
+    "UI-2.8 — Banking Details (stamped)",
+    "Medical certificate/Proof of birth (when available)",
+    "Copy of ID / Passport",
+  ],
+  parental: [
+    "UI-19 — Employer Declaration",
+    "UI-2.1 — Application for Benefits",
+    "UI-2.7 — Employer Certificate",
+    "UI-2.8 — Banking Details (stamped)",
+    "Child's birth certificate",
+    "Proof of parental leave from employer (if available)",
+  ],
+  adoption: [
+    "UI-19 — Employer Declaration",
+    "UI-2.1 — Application for Benefits",
+    "UI-2.7 — Employer Certificate",
+    "UI-2.8 — Banking Details (stamped)",
+    "Adoption court order / placement letter",
+  ],
+  illness: [
+    "UI-19 — Employer Declaration",
+    "UI-2.1 — Application for Benefits",
+    "UI-2.7 — Employer Certificate",
+    "UI-2.8 — Banking Details (stamped)",
+    "Recent medical certificate (original; not older than 14 days when applicable)",
+  ],
+  reduced: [
+    "UI-19 — Employer Declaration",
+    "UI-2.1 — Application for Benefits",
+    "UI-2.7 — Employer Certificate",
+    "UI-2.8 — Banking Details (stamped)",
+    "Proof of reduced hours/short-time from employer",
+    "Recent payslips showing reduced earnings",
+  ],
+  dependants: [
+    "UI-2.1 — Application for Benefits (as dependant)",
+    "UI-2.8 — Banking Details (stamped)",
+    "Deceased’s death certificate",
+    "Deceased’s ID copy",
+    "Proof of relationship (marriage/birth certificate, affidavit where applicable)",
+  ],
+};
+
+function clamp(n: number, min: number, max: number) { return Math.min(Math.max(n, min), max); }
+function round2(n: number) { return Math.round(n * 100) / 100; }
+function fmtMoney(n: number) { return n.toLocaleString("en-ZA", { style: "currency", currency: "ZAR", maximumFractionDigits: 2 }); }
+
+export default function UifPage() {
+  const [claimType, setClaimType] = useState<ClaimType>("unemployment");
+  const [salary, setSalary] = useState("");
+  const [monthsWorked, setMonthsWorked] = useState("");
+  const [result, setResult] = useState<null | {
+    cappedSalary: number;
+    dailyIncome: number;
+    irrPct: number;
+    dailyBenefitSliding: number;
+    dailyBenefitFlat20: number;
+    creditDays: number;
+    daysSliding: number;
+    daysFlat20: number;
+    totalBenefit: number;
+    estMonths: number;
+  }>(null);
+
+  // Off-hours detection: Nights (20:00–06:59) or Weekends (Sat/Sun)
+  const showDowntimeWarning = useMemo(() => {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun, 6=Sat
+    const hr = now.getHours();
+    const isWeekend = day === 0 || day === 6;
+    const isNight   = hr >= 20 || hr < 7;
+    return isWeekend || isNight;
+  }, []);
+
+  function computeBenefit(avgMonthly: number, months: number, type: ClaimType) {
+    const limits = CLAIM_LIMITS[type];
+
+    const cappedSalary = Math.min(Math.max(avgMonthly, 0), UIF_MONTHLY_CEILING);
+    const Y1 = (cappedSalary * 12) / 365;
+
+    const irrRaw = 29.2 + 7173.92 / (232.92 + Y1);
+    const irrPct = clamp(irrRaw, 38, 60);
+
+    const dailySliding = (irrPct / 100) * Y1; // first 0–238 days
+    const dailyFlat20  = Y1 * 0.20;           // days 239–365
+
+    const approxCredits = Math.floor((months * 30) / 4);
+    const creditDays = clamp(approxCredits, 0, Math.min(GLOBAL_MAX_CREDIT_DAYS, limits.maxDays));
+
+    const daysSliding = clamp(creditDays, 0, SLIDING_MAX_DAYS);
+    const daysFlat20 = creditDays > SLIDING_MAX_DAYS ? creditDays - SLIDING_MAX_DAYS : 0;
+
+    const totalSliding = dailySliding * daysSliding;
+    const totalFlat = dailyFlat20 * daysFlat20;
+    const totalBenefit = totalSliding + totalFlat;
+
+    const estMonths = creditDays > 0 ? creditDays / 21.67 : 0;
+
+    return {
+      cappedSalary,
+      dailyIncome: round2(Y1),
+      irrPct: round2(irrPct),
+      dailyBenefitSliding: round2(dailySliding),
+      dailyBenefitFlat20: round2(dailyFlat20),
+      creditDays,
+      daysSliding,
+      daysFlat20,
+      totalBenefit: round2(totalBenefit),
+      estMonths: round2(estMonths),
+    };
+  }
 
   const calculate = () => {
-    if (!salary || !months || !claimType) return alert("Please fill all fields");
-    const capped = Math.min(salary, 17712);
-    const employee = capped * 0.01;
-    const employer = capped * 0.01;
-    const total = employee + employer;
-    const irr = Math.max(0.38, Math.min(0.6, 0.38 + (17712 - capped) / 17712 * 0.22));
-    const avg = capped / 30.4;
-    const daily = avg * irr;
-    const monthly = daily * 30;
-    const days = Math.min(365, months * 7.5);
-    setResult({ capped, employee, employer, total, irr, avg, daily, monthly, days });
-    setExtra(claimInfo[claimType]);
+    const sal = parseFloat(salary) || 0;
+    const months = parseFloat(monthsWorked) || 0;
+    if (sal <= 0 || months <= 0) { setResult(null); return; }
+    setResult(computeBenefit(sal, months, claimType));
   };
 
-  const clear = () => { setSalary(null); setMonths(null); setClaimType(""); setResult(null); setExtra(null); };
-
-  const exportPDF = async () => {
-    if (!pdfRef.current) return;
-    const canvas = await html2canvas(pdfRef.current);
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const width = pdf.internal.pageSize.getWidth();
-    const height = (canvas.height * width) / canvas.width;
-    pdf.addImage(imgData, "PNG", 0, 0, width, height);
-    pdf.save("UIF_Estimate_Scend.pdf");
+  const clear = () => {
+    setSalary("");
+    setMonthsWorked("");
+    setResult(null);
   };
 
-  const shareResults = () => {
-    if (!result) return alert("No results to share yet!");
-    const text = `🧾 UIF Estimate - ${claimType}
-Monthly Salary: R${salary}
-Eligible: ${extra?.eligible ? "Yes" : "No"}
-Benefit: R${result.monthly.toFixed(2)} / month
-Expected Payout: ${extra?.payoutTime}
+  function shareSummary() {
+    if (!result) return "UIF result: Enter inputs and click Calculate.";
+    const t = CLAIM_LIMITS[claimType]?.label ?? "UIF";
+    const base = [
+      `${t} UIF Estimate`,
+      `Salary used (cap): ${fmtMoney(result.cappedSalary)}`,
+      `IRR: ${result.irrPct}%`,
+      `Daily benefit: ${fmtMoney(result.dailyBenefitSliding)} (sliding) / ${fmtMoney(result.dailyBenefitFlat20)} (20% band)`,
+      `Credit days: ${result.creditDays} (sliding ${result.daysSliding}, flat20 ${result.daysFlat20})`,
+      `Months payable: ${result.estMonths}`,
+      `Total estimated: ${fmtMoney(result.totalBenefit)}`
+    ];
+    return base.join(" • ");
+  }
+  function waShare() {
+    if (!result) { alert("Calculate first, then share."); return; }
+    const text = encodeURIComponent(shareSummary() + " — " + (typeof window !== "undefined" ? window.location.href : ""));
+    window.open(`https://wa.me/?text=${text}`, "_blank");
+  }
+  function emailShare() {
+    if (!result) { alert("Calculate first, then share."); return; }
+    const subject = encodeURIComponent("UIF estimate");
+    const body = encodeURIComponent(shareSummary() + "\n\n" + (typeof window !== "undefined" ? window.location.href : ""));
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  }
+  async function copyShare() {
+    if (!result) { alert("Calculate first, then copy."); return; }
+    try { await navigator.clipboard.writeText(shareSummary() + " — " + (typeof window !== "undefined" ? window.location.href : "")); alert("Copied to clipboard"); }
+    catch { alert("Copy failed"); }
+  }
 
-Powered by Scend.`;
-    navigator.clipboard.writeText(text);
-    alert("✅ UIF summary copied. Paste it into WhatsApp or Email!");
-  };
+  function exportPDF() {
+    if (!result) return;
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text("Scend — UIF Benefit Estimate", 14, 16);
+    doc.setFontSize(10);
+    doc.text(`Claim type: ${CLAIM_LIMITS[claimType].label}`, 14, 23);
 
-  const downloadAll = async () => {
-    if (!extra?.docs?.length) { alert("Select a claim type first."); return; }
-    setBusyZip(true);
-    try {
-      const zip = new JSZip();
-      const folderName = `${claimType.replace(/\s+/g, "_")}_UIF_Docs`;
-      const folder = zip.folder(folderName)!;
+    const rows: any[] = [
+      ["Salary used (cap)", fmtMoney(result.cappedSalary)],
+      ["Daily income (Y1)", fmtMoney(result.dailyIncome)],
+      ["IRR (sliding rate)", `${result.irrPct}%`],
+      ["Daily benefit (sliding)", fmtMoney(result.dailyBenefitSliding)],
+      ["Daily benefit (20% band)", fmtMoney(result.dailyBenefitFlat20)],
+      ["Credit days (total)", String(result.creditDays)],
+      ["— Sliding scale days (0–238)", String(result.daysSliding)],
+      ["— Flat 20% days (239–365)", String(result.daysFlat20)],
+      ["Estimated months payable", String(result.estMonths)],
+      ["Total estimated benefit", fmtMoney(result.totalBenefit)]
+    ];
 
-      for (const d of extra.docs as Array<{label:string; file:string}>) {
-        const url = `/docs/${d.file}`;
-        const res = await fetch(url);
-        if (!res.ok) continue; // skip missing files silently
-        const blob = await res.blob();
-        const ab = await blob.arrayBuffer();
-        folder.file(d.file, ab);
-      }
+    autoTable(doc, { startY: 30, head: [["Field","Value"]], body: rows, styles: { fontSize: 10 }, theme: "grid", margin: { left: 14, right: 14 } });
 
-      const out = await zip.generateAsync({ type: "blob" });
-      saveAs(out, `${claimType}-UIF-documents.zip`);
-    } catch {
-      alert("Could not create ZIP. Make sure the files exist in /public/docs.");
-    } finally {
-      setBusyZip(false);
-    }
-  };
+    const disclaimer =
+      "Indicative only — not advice. The Department of Employment and Labour/UIF have final say. " +
+      "Rules may vary by claim type and verification. If official links time out, use mirror downloads.";
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const footerY = doc.internal.pageSize.getHeight() - 12;
+    doc.setFontSize(8);
+    doc.text(disclaimer, 14, footerY, { maxWidth: pageWidth - 28 });
+
+    doc.save("UIF_Estimate.pdf");
+  }
+
+  function printPage() {
+    window.print();
+  }
+
+  const btnPrimary = "rounded-xl px-4 py-2 bg-pink-600 text-white hover:opacity-90";
+  const btnOutline = "rounded-xl px-3 py-2 border";
 
   return (
-    <main className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-pink-600">UIF Tool (Smart Estimator)</h1>
-      <p className="text-gray-600 mt-1">Check UIF eligibility, required docs (downloadable), payout expectation, and estimate benefits.</p>
-
-      <div className="mt-6 space-y-4">
+    <section className="mx-auto max-w-4xl p-6 space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <label className="block font-medium">Claim Type</label>
-          <select value={claimType} onChange={(e) => setClaimType(e.target.value)} className="w-full border rounded p-2">
-            <option value="">Select claim type...</option>
-            {Object.keys(claimInfo).map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
+          <h1 className="text-2xl font-bold">UIF Tool</h1>
+          <p className="text-sm text-gray-600">
+            Estimate your UIF benefit and find the official forms and steps for claiming.
+          </p>
         </div>
-
-        <div>
-          <label className="block font-medium">Average Monthly Salary (ZAR)</label>
-          <input type="number" value={salary ?? ""} onChange={(e) => setSalary(parseFloat(e.target.value))}
-            className="w-full border rounded p-2" placeholder="e.g. 10000" />
-        </div>
-
-        <div>
-          <label className="block font-medium">Months Contributed in Last 4 Years</label>
-          <input type="number" value={months ?? ""} onChange={(e) => setMonths(parseFloat(e.target.value))}
-            className="w-full border rounded p-2" placeholder="e.g. 36" />
-        </div>
-
-        <div className="flex gap-3">
-          <button onClick={calculate} className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded">Calculate</button>
-          <button onClick={clear} className="border border-gray-400 px-4 py-2 rounded">Clear</button>
+        <div className="hidden md:flex flex-wrap gap-2">
+          <button className={btnOutline} onClick={waShare} disabled={!result}>Share WhatsApp</button>
+          <button className={btnOutline} onClick={emailShare} disabled={!result}>Share Email</button>
+          <button className={btnOutline} onClick={copyShare} disabled={!result}>Copy</button>
+          <button className={btnOutline} onClick={exportPDF} disabled={!result}>Export PDF</button>
+          <button className={btnOutline} onClick={printPage}>Print</button>
         </div>
       </div>
 
-      <div ref={pdfRef}>
-        {extra && (
-          <div className="mt-8 p-4 rounded-md shadow bg-gray-50">
-            <h2 className="font-semibold text-lg text-pink-600 mb-2">Claim Information</h2>
-            {extra.eligible ? (
-              <>
-                <p className="text-green-700 font-medium">✅ Eligible for UIF benefits</p>
-                <p className="text-gray-700 mt-1">{extra.note}</p>
-
-                <h3 className="font-medium mt-3">Required Documents (click to download):</h3>
-                <ul className="list-disc ml-6 text-gray-700">
-                  {(extra.docs as Array<{label:string; file:string}>).map((d, i) => (
-                    <li key={i}>
-                      <a href={`/docs/${d.file}`} download className="text-pink-600 hover:text-pink-700 underline underline-offset-2" title="Download file">
-                        ⬇ {d.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-
-                <p className="mt-3"><strong>Estimated Payout Time:</strong> {extra.payoutTime}</p>
-              </>
-            ) : (
-              <p className="text-red-600 font-medium">❌ Not eligible for UIF benefits</p>
-            )}
-          </div>
-        )}
-
-        {result && extra?.eligible && (
-          <div className="mt-8 bg-gray-50 p-4 rounded-md shadow">
-            <h2 className="font-semibold text-lg mb-2 text-pink-600">Financial Estimate</h2>
-            <ul className="space-y-1 text-gray-700">
-              <li>Employee Contribution: R {result.employee.toFixed(2)}</li>
-              <li>Employer Contribution: R {result.employer.toFixed(2)}</li>
-              <li>Total Monthly UIF: R {result.total.toFixed(2)}</li>
-              <li>Avg Daily Income: R {result.avg.toFixed(2)}</li>
-              <li>Income Replacement Rate (IRR): {(result.irr * 100).toFixed(2)}%</li>
-              <li>Estimated Daily Benefit: R {result.daily.toFixed(2)}</li>
-              <li>Approx. Monthly Benefit: R {result.monthly.toFixed(2)}</li>
-              <li>Credit Days (Claim Duration): {result.days.toFixed(0)} days</li>
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {(result || extra) && (
-        <div className="flex flex-wrap gap-3 mt-6">
-          <button onClick={exportPDF} className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded">Download PDF</button>
-          <button onClick={shareResults} className="border border-gray-400 px-4 py-2 rounded">Share Results</button>
-          <button onClick={downloadAll} disabled={busyZip} className="border border-pink-600 text-pink-600 hover:bg-pink-50 px-4 py-2 rounded disabled:opacity-60">
-            {busyZip ? "Preparing ZIP..." : "Download all docs (ZIP)"}
-          </button>
+      {showDowntimeWarning && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 text-amber-900 p-3 text-sm">
+          <b>Heads up:</b> The Department of Employment and Labour site often experiences downtime
+          at night and on weekends. If an official link times out, use the <b>Mirror download</b> next to it.
         </div>
       )}
 
-      <p className="text-center text-gray-500 text-sm mt-10">Powered by Scend — simplifying South African financial life.</p>
-          {/* UIF estimation disclaimer */}
-      <div className="mt-10 text-xs text-gray-500 leading-relaxed">
-        <p>
-          <strong>Disclaimer:</strong> The calculations, document lists, and timelines provided by this tool are
-          <em> estimates for guidance only</em>. The Department of Employment and Labour (DoL) is the final authority on
-          eligibility, benefit amounts, required documents, and payout timing.
-        </p>
+      <div className="rounded-xl border bg-white shadow-sm p-4 space-y-4">
+        <div>
+          <label className="block text-sm font-medium">What are you claiming for?</label>
+          <select
+            className="border rounded-md px-3 py-2 w-full md:w-80"
+            value={claimType}
+            onChange={e => { setClaimType(e.target.value as ClaimType); setResult(null); }}
+          >
+            {Object.entries(CLAIM_LIMITS).map(([k, v]) => (
+              <option key={k} value={k}>{v.label}</option>
+            ))}
+          </select>
+          {CLAIM_LIMITS[claimType]?.notes && (
+            <p className="text-xs text-gray-500 mt-1">{CLAIM_LIMITS[claimType].notes}</p>
+          )}
+          <div className="mt-2 rounded-lg border border-pink-200 bg-pink-50 p-3">
+            <p className="text-xs text-pink-800 mb-1">
+              Typical supporting documents for <b>{CLAIM_LIMITS[claimType].label}</b> (check DoL/uFiling for updates):
+            </p>
+            <ul className="list-disc list-inside text-xs text-pink-900 space-y-0.5">
+              {CLAIM_DOCS[claimType].map((d, i) => <li key={i}>{d}</li>)}
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Average Monthly Salary (R)</label>
+          <input
+            type="number"
+            value={salary}
+            onChange={(e) => setSalary(e.target.value)}
+            className="border rounded-md px-3 py-2 w-60"
+            placeholder="e.g. 12000"
+          />
+          <p className="text-xs text-gray-500 mt-1">Capped at {fmtMoney(UIF_MONTHLY_CEILING)} for UIF calculations.</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Months Worked in the Last 4 Years</label>
+          <input
+            type="number"
+            value={monthsWorked}
+            onChange={(e) => setMonthsWorked(e.target.value)}
+            className="border rounded-md px-3 py-2 w-60"
+            placeholder="e.g. 24"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Credits accrue at roughly 1 day for every 4 days worked (≈7–8 per month).
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <button onClick={calculate} className={btnPrimary}>Calculate</button>
+          <button onClick={clear} className="rounded-xl px-4 py-2 border">Clear</button>
+
+          <div className="flex gap-2 md:hidden">
+            <button className={btnOutline} onClick={waShare} disabled={!result}>WhatsApp</button>
+            <button className={btnOutline} onClick={emailShare} disabled={!result}>Email</button>
+            <button className={btnOutline} onClick={copyShare} disabled={!result}>Copy</button>
+            <button className={btnOutline} onClick={exportPDF} disabled={!result}>PDF</button>
+            <button className={btnOutline} onClick={printPage}>Print</button>
+          </div>
+        </div>
       </div>
-    </main>
+
+      <div className="rounded-xl border bg-white shadow-sm">
+        <div className="px-5 py-4 border-b">
+          <h2 className="font-semibold">Results</h2>
+        </div>
+        <div className="px-5 py-4">
+          {result ? (
+            <div className="grid gap-2">
+              <div className="flex justify-between"><span>Claim type</span><b>{CLAIM_LIMITS[claimType].label}</b></div>
+              <div className="flex justify-between"><span>Salary used (cap)</span><b>{fmtMoney(result.cappedSalary)}</b></div>
+              <div className="flex justify-between"><span>Daily income (Y1)</span><b>{fmtMoney(result.dailyIncome)}</b></div>
+              <div className="flex justify-between"><span>IRR (sliding rate)</span><b>{result.irrPct}%</b></div>
+              <div className="flex justify-between"><span>Daily benefit (first {SLIDING_MAX_DAYS} days)</span><b>{fmtMoney(result.dailyBenefitSliding)}</b></div>
+              <div className="flex justify-between"><span>Daily benefit (days 239–365)</span><b>{fmtMoney(result.dailyBenefitFlat20)}</b></div>
+              <div className="flex justify-between"><span>Total credit days (capped)</span><b>{result.creditDays}</b></div>
+              <div className="flex justify-between"><span>— Sliding-scale days</span><b>{result.daysSliding}</b></div>
+              <div className="flex justify-between"><span>— Flat 20% days</span><b>{result.daysFlat20}</b></div>
+              <div className="flex justify-between"><span>Estimated months payable</span><b>{result.estMonths}</b></div>
+              <div className="flex justify-between"><span>Total UIF benefit (estimate)</span><b>{fmtMoney(result.totalBenefit)}</b></div>
+              <p className="text-xs text-gray-500 mt-2">
+                Timing and validation can affect totals. For Reduced Work Time, actual payouts depend on verified lost hours.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600">Enter inputs and click <b>Calculate</b> to see results.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="border rounded-xl bg-white shadow-sm p-4 space-y-2">
+        <h3 className="font-semibold">Required UIF Forms & Resources</h3>
+        <p className="text-xs text-gray-500 -mt-1 mb-1">
+          Government servers can be slow. If an official link times out, use the <b>Mirror download</b> hosted on this site.
+        </p>
+        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+          <li>
+            <a href="https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/UI-19.pdf" target="_blank" rel="noreferrer" className="text-pink-600 underline">
+              UI-19 — Employer Declaration Form (official)
+            </a>
+            <span className="mx-2 text-gray-400">•</span>
+            <a href="/uif/forms/UI-19.pdf" download className="text-pink-600 underline">Mirror download</a>
+          </li>
+          <li>
+            <a href="https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/UI-2.8.pdf" target="_blank" rel="noreferrer" className="text-pink-600 underline">
+              UI-2.8 — Banking Details Form (official)
+            </a>
+            <span className="mx-2 text-gray-400">•</span>
+            <a href="/uif/forms/UI-2.8.pdf" download className="text-pink-600 underline">Mirror download</a>
+          </li>
+          <li>
+            <a href="https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/UI-2.1.pdf" target="_blank" rel="noreferrer" className="text-pink-600 underline">
+              UI-2.1 — Application for Unemployment Benefits (official)
+            </a>
+            <span className="mx-2 text-gray-400">•</span>
+            <a href="/uif/forms/UI-2.1.pdf" download className="text-pink-600 underline">Mirror download</a>
+          </li>
+          <li>
+            <a href="https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/UI-2.7.pdf" target="_blank" rel="noreferrer" className="text-pink-600 underline">
+              UI-2.7 — Employer Certificate (official)
+            </a>
+            <span className="mx-2 text-gray-400">•</span>
+            <a href="/uif/forms/UI-2.7.pdf" download className="text-pink-600 underline">Mirror download</a>
+          </li>
+          <li>
+            <a href="https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/UI-2.2.pdf" target="_blank" rel="noreferrer" className="text-pink-600 underline">
+              UI-2.2 — Remuneration Received while Unemployed (official)
+            </a>
+            <span className="mx-2 text-gray-400">•</span>
+            <a href="/uif/forms/UI-2.2.pdf" download className="text-pink-600 underline">Mirror download</a>
+          </li>
+          <li>
+            <a href="https://www.ufiling.labour.gov.za/uif/" target="_blank" rel="noreferrer" className="text-pink-600 underline">
+              Submit online via uFiling (official UIF portal)
+            </a>
+          </li>
+          <li>
+            <a href="https://www.labour.gov.za/Contacts/Provincial%20Offices" target="_blank" rel="noreferrer" className="text-pink-600 underline">
+              Find your nearest Department of Labour Centre
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div className="text-xs text-gray-500 bg-gray-50 border rounded-xl p-3 leading-relaxed">
+        <b>Disclaimer:</b> This calculator provides indicative results only. The Department of Employment and Labour and
+        the Unemployment Insurance Fund (UIF) have final authority over claim approval, eligibility, rates and payouts.
+        Mirrors are provided for convenience when official servers are unavailable.
+      </div>
+    </section>
   );
 }
-

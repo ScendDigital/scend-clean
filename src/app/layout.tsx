@@ -10,11 +10,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <header className="border-b">
-          <div className="mx-auto max-w-6xl px-4 py-6 flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Welcome to Scend</h1>
-            <nav className="flex gap-6 text-sm">
-  <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-4 text-sm">
+        <header className="flex justify-between items-center p-4 bg-pink-600 text-white shadow-md">
+  <div className="flex items-center gap-2">
+    <img src="/scend-logo.png" alt="Scend Logo" className="h-8 w-8" />
+    <h1 className="font-bold text-xl">Welcome to Scend</h1>
+  </div>
+  <nav className="space-x-4">
     <a href="/" className="hover:underline">Home</a>
     <a href="/loan" className="hover:underline">Loan Tool</a>
     <a href="/tax" className="hover:underline">SARS Tax Calculator</a>
@@ -22,15 +23,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <a href="/price-compare" className="hover:underline">Price Compare Tool</a>
     <a href="/about" className="hover:underline">About Us</a>
     <a href="/contact" className="hover:underline">Contact Us</a>
-  </div>
-</nav>
-          </div>
-        </header>
+  </nav>
+</header>
         <main className="min-h-screen bg-white">{children}</main>
       </body>
     </html>
   );
 }
+
 
 
 
