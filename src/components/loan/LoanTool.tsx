@@ -1,4 +1,5 @@
-﻿"use client";
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
 import { NCA_MAX_APR } from "../../lib/loanLogic";
 import { useMemo, useState } from "react";
@@ -720,3 +721,4 @@ export default function LoanTool() {
     </section>
   );
 }
+

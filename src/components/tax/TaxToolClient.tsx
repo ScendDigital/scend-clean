@@ -1,4 +1,5 @@
-﻿"use client";
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
 import dynamic from "next/dynamic";
 
@@ -10,3 +11,4 @@ const LazyTaxTool = dynamic(() => import("./TaxTool"), {
 export default function TaxToolClient(props: Record<string, any>) {
   return <LazyTaxTool {...props} />;
 }
+

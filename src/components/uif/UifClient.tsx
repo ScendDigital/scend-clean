@@ -1,4 +1,5 @@
-﻿"use client";
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
 import dynamic from "next/dynamic";
 
@@ -10,3 +11,4 @@ const LazyUifTool = dynamic(() => import("./UifTool"), {
 export default function UifClient(props: Record<string, any>) {
   return <LazyUifTool {...props} />;
 }
+

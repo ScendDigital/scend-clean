@@ -2,10 +2,7 @@
 export const metadata = {
   title: "Scend",
   description: "Tools to make life simpler.",
-};
-
-import "../styles/globals.css";
-
+}; param($m) $m.Value + "import Link from 'next/link'\n" 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -16,13 +13,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <h1 className="font-bold text-xl">Welcome to Scend</h1>
   </div>
   <nav className="space-x-4">
-    <a href="/" className="hover:underline">Home</a>
-    <a href="/loan" className="hover:underline">Loan Tool</a>
-    <a href="/tax" className="hover:underline">SARS Tax Calculator</a>
-    <a href="/uif" className="hover:underline">UIF Tool</a>
-    <a href="/price-compare" className="hover:underline">Price Compare Tool</a>
-    <a href="/about" className="hover:underline">About Us</a>
-    <a href="/contact" className="hover:underline">Contact Us</a>
+    <a href="/" className="hover:underline">Home</Link>
+    <a href="/loan" className="hover:underline">Loan Tool</Link>
+    <a href="/tax" className="hover:underline">SARS Tax Calculator</Link>
+    <a href="/uif" className="hover:underline">UIF Tool</Link>
+    <a href="/price-compare" className="hover:underline">Price Compare Tool</Link>
+    <a href="/about" className="hover:underline">About Us</Link>
+    <a href="/contact" className="hover:underline">Contact Us</Link>
   </nav>
 </header>
         <main className="min-h-screen bg-white">{children}</main>
@@ -30,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
 
 
 

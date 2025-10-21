@@ -1,4 +1,5 @@
-﻿import jsPDF from "jspdf";
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { UifInputs, UifResults } from "./logic";
 
@@ -71,3 +72,4 @@ function formatMoney(v: number): string {
   if (!isFinite(v)) return "R 0.00";
   return "R " + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+

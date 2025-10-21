@@ -14,7 +14,7 @@ function annualTaxBeforeRebates(taxable: number){
   for(const br of b){
     if(taxable <= br.up){
       if(!("over" in br)) return taxable * br.rate;
-      // @ts-ignore
+      // @ts-expect-error
       return br.base + (taxable - br.over) * br.rate;
     }
   }
