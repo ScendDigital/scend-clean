@@ -1,42 +1,30 @@
-﻿import "../styles/globals.css";
+﻿// src/app/layout.tsx
+import type { ReactNode } from "react";
+import "./globals.css"; // keep your Tailwind/global styles
+import NavBar from "@/components/shared/NavBar"; // uses your new Scend Tools NavBar
+
 export const metadata = {
-  title: "Scend",
-  description: "Tools to make life simpler.",
+  title: "Scend Tools",
+  description:
+    "Smart digital tools by Scend — Loan Qualification, SARS Tax Calculator Tool, UIF Estimator, and Price Comparison, built for South Africans with compliance and transparency.",
 };
 
-import "../styles/globals.css";
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <header className="border-b">
-          <div className="mx-auto max-w-6xl px-4 py-6 flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Welcome to Scend</h1>
-            <nav className="flex gap-6 text-sm">
-  <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-4 text-sm">
-    <a href="/" className="hover:underline">Home</a>
-    <a href="/loan" className="hover:underline">Loan Tool</a>
-    <a href="/tax" className="hover:underline">SARS Tax Calculator</a>
-    <a href="/uif" className="hover:underline">UIF Tool</a>
-    <a href="/price-compare" className="hover:underline">Price Compare Tool</a>
-    <a href="/about" className="hover:underline">About Us</a>
-    <a href="/contact" className="hover:underline">Contact Us</a>
-  </div>
-</nav>
-          </div>
-        </header>
-        <main className="min-h-screen bg-white">{children}</main>
+      <body className="min-h-screen bg-white text-gray-900">
+        {/* ✅ Global Navbar */}
+        <NavBar />
+
+        {/* ✅ Main content */}
+        <main className="pt-4 pb-12">{children}</main>
+
+        {/* ✅ Optional Footer */}
+        <footer className="border-t py-6 text-center text-sm text-gray-500">
+          © {new Date().getFullYear()} Scend Pty Ltd. All rights reserved.
+        </footer>
       </body>
     </html>
   );
 }
-
-
-
-
-
-
-
-
 

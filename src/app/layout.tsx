@@ -1,23 +1,31 @@
-﻿import type { Metadata } from 'next';
-import type { ReactNode } from 'react';
-import Link from 'next/link';
-import './globals.css';
+﻿// src/app/layout.tsx
+import type { ReactNode } from "react";
+import "./globals.css"; // keep your Tailwind/global styles
+import NavBar from "@/components/shared/NavBar"; // uses your new Scend Tools NavBar
 
-export const metadata: Metadata = {
-  title: 'Scend',
-  description: 'Tools to make life simpler.',
+export const metadata = {
+  title: "Scend Tools",
+  description:
+    "Smart digital tools by Scend — Loan Qualification, SARS Tax Calculator Tool, UIF Estimator, and Price Comparison, built for South Africans with compliance and transparency.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        {/* Minimal header – compliant Link usage */}
-        <header className="p-4">
-          <Link href="/">Home</Link>
-        </header>
-        {children}
+      <body className="min-h-screen bg-white text-gray-900">
+        {/* ✅ Global Navbar */}
+        <NavBar />
+
+        {/* ✅ Main content */}
+        <main className="pt-4 pb-12">{children}</main>
+
+        {/* ✅ Optional Footer */}
+        <footer className="border-t py-6 text-center text-sm text-gray-500">
+          © {new Date().getFullYear()} Scend Pty Ltd. All rights reserved.
+        </footer>
       </body>
     </html>
   );
 }
+
+
