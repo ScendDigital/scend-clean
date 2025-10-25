@@ -1,4 +1,5 @@
-﻿// src/app/layout.tsx
+﻿import NoMailtoGuard from "@/components/shared/NoMailtoGuard";
+// src/app/layout.tsx
 import type { ReactNode } from "react";
 import "./globals.css"; // keep your Tailwind/global styles
 import NavBar from "@/components/shared/NavBar"; // uses your new Scend Tools NavBar
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className="min-h-screen bg-white text-gray-900">
+    <NoMailtoGuard />
         {/* ✅ Global Navbar */}
         <NavBar />
 
@@ -27,5 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
+
 
 

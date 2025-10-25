@@ -1,5 +1,18 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 /* (optional) Tell Tailwind where to scan in v4 */
 @source "../components/**/*.{ts,tsx,js,jsx}";
 @source "../app/**/*.{ts,tsx,js,jsx,mdx}";
+/* === Scend Brand Heading (scoped utility) === */
+.scend-heading {
+  font-family: "Poppins", "Montserrat", sans-serif;
+  font-weight: 800;
+  font-size: 3.5rem; /* ˜ text-6xl */
+  line-height: 1.1;
+  color: #C3006A;
+  letter-spacing: -0.02em;
+}
+@media (min-width: 768px) {
+  .scend-heading { font-size: 4rem; }
+}
+

@@ -1,4 +1,4 @@
-// web/src/components/LoanTool.jsx
+﻿// web/src/components/LoanTool.jsx
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
@@ -20,7 +20,7 @@ function pmtWithFV(pv, r, n, fv = 0) {
   return (r * (pv - discFV)) / (1 - Math.pow(1 + r, -n));
 }
 
-/** Simple scorecard (300–850) */
+/** Simple scorecard (300â€“850) */
 function estimateCreditScore({ preDTI, utilization, missedPayments12m, creditAgeYears, inquiries6m }) {
   let score = 680;
   // Payment history
@@ -88,7 +88,7 @@ function rateFromScore(loanType, score, basePrime) {
     if (s >= 620) return prime + 16;
     return prime + 22;
   }
-  // Credit Card — absolute APR
+  // Credit Card â€” absolute APR
   if (s >= 780) return 15;
   if (s >= 740) return 18;
   if (s >= 700) return 22;
@@ -289,9 +289,9 @@ export default function LoanTool() {
 
   const hardFails = [];
   if (!(income > 0)) hardFails.push("Provide monthly gross income.");
-  if (!scoreOK) hardFails.push(`Credit score below minimum for ${loanType} (needs ≥ ${minScore}).`);
-  if (!dtiOK) hardFails.push(`Post-loan DTI ${Number.isFinite(postDTI) ? pct(postDTI) : "—"} exceeds limit ${pct(dtiLimit)}.`);
-  if (!ptiOK) hardFails.push(`Payment-to-income ${Number.isFinite(pti) ? pct(pti) : "—"} exceeds cap ${pct(ptiLimit)}.`);
+  if (!scoreOK) hardFails.push(`Credit score below minimum for ${loanType} (needs â‰¥ ${minScore}).`);
+  if (!dtiOK) hardFails.push(`Post-loan DTI ${Number.isFinite(postDTI) ? pct(postDTI) : "â€”"} exceeds limit ${pct(dtiLimit)}.`);
+  if (!ptiOK) hardFails.push(`Payment-to-income ${Number.isFinite(pti) ? pct(pti) : "â€”"} exceeds cap ${pct(ptiLimit)}.`);
   if (!ccPaySufficient) hardFails.push(`Credit Card payment too low to amortise (increase above interest/min).`);
 
   const borderline =
@@ -343,7 +343,7 @@ export default function LoanTool() {
     const n = Math.max(1, Math.round(targetMonths));
     // From PMT inversion (FV=0):
     const pFromTerm = r === 0 ? payPlan * n : payPlan * (1 - Math.pow(1 + r, -n)) / r;
-    // Min-payment constraint: pay ≥ max(minAbs, minPct * P) -> P ≤ pay/minPct and pay ≥ minAbs.
+    // Min-payment constraint: pay â‰¥ max(minAbs, minPct * P) -> P â‰¤ pay/minPct and pay â‰¥ minAbs.
     if (payPlan < minAbs) return 0;
     const pFromMinPct = minPct > 0 ? payPlan / minPct : pFromTerm;
     return Math.min(pFromTerm, pFromMinPct);
@@ -390,7 +390,7 @@ export default function LoanTool() {
     const node = printRef.current;
     if (!node) return;
 
-    const printWindow = window.open("", "PRINT", "width=900,height=700");
+    const printWindow = /* removed window.open */;
     if (!printWindow) return;
 
     const styles = `
@@ -407,12 +407,12 @@ export default function LoanTool() {
     const html = `
       <html>
         <head>
-          <title>Scend • Loan Summary</title>
+          <title>Scend â€¢ Loan Summary</title>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <style>${styles}</style>
         </head>
         <body>
-          <h1>Scend • Loan Summary</h1>
+          <h1>Scend â€¢ Loan Summary</h1>
           <div class="muted">Generated on ${now}</div>
           <div class="section">
             ${node.innerHTML}
@@ -447,7 +447,7 @@ export default function LoanTool() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-2xl font-semibold">Scend • Loan Tool</h1>
+      <h1 className="text-2xl font-semibold">Scend â€¢ Loan Tool</h1>
 
       {/* Applicant profile */}
       <div className="border rounded p-4 space-y-3">
@@ -473,7 +473,7 @@ export default function LoanTool() {
           <label className="block">
             <div className="text-sm mb-1">
               Credit age (years)
-              <span className="block text-xs text-gray-500">≈ time since first account and average age</span>
+              <span className="block text-xs text-gray-500">â‰ˆ time since first account and average age</span>
             </div>
             <input className="border rounded p-2 w-full" placeholder="e.g. 6" value={creditAgeYears} onChange={(e) => setCreditAgeYears(e.target.value)} />
           </label>
@@ -631,9 +631,9 @@ export default function LoanTool() {
           <div>Total paid (approx): <strong>{ZAR.format(calc.totalPaid)}</strong></div>
 
           {/* DTI/PTI */}
-          <div>Pre-loan DTI: <strong>{Number.isFinite(preDTI) ? pct(preDTI) : "—"}</strong></div>
-          <div>Post-loan DTI: <strong className={dtiOK ? "" : "text-red-600"}>{Number.isFinite(postDTI) ? pct(postDTI) : "—"}</strong> <span className="text-sm text-gray-600"> (limit ~{pct(dtiLimit)})</span></div>
-          <div>Payment / Income (PTI): <strong className={ptiOK ? "" : "text-red-600"}>{Number.isFinite(pti) ? pct(pti) : "—"}</strong> <span className="text-sm text-gray-600"> (cap ~{pct(ptiLimit)})</span></div>
+          <div>Pre-loan DTI: <strong>{Number.isFinite(preDTI) ? pct(preDTI) : "â€”"}</strong></div>
+          <div>Post-loan DTI: <strong className={dtiOK ? "" : "text-red-600"}>{Number.isFinite(postDTI) ? pct(postDTI) : "â€”"}</strong> <span className="text-sm text-gray-600"> (limit ~{pct(dtiLimit)})</span></div>
+          <div>Payment / Income (PTI): <strong className={ptiOK ? "" : "text-red-600"}>{Number.isFinite(pti) ? pct(pti) : "â€”"}</strong> <span className="text-sm text-gray-600"> (cap ~{pct(ptiLimit)})</span></div>
         </div>
 
         {/* Verdict */}
@@ -645,7 +645,7 @@ export default function LoanTool() {
             </ul>
           )}
           {hardFails.length === 0 && borderline && (
-            <div className="mt-2 text-sm">Close! You’re within range but slightly tight on score and/or affordability.</div>
+            <div className="mt-2 text-sm">Close! Youâ€™re within range but slightly tight on score and/or affordability.</div>
           )}
         </div>
 
@@ -654,20 +654,20 @@ export default function LoanTool() {
           <div className="font-medium mb-1">Recommendations</div>
           <ul className="list-disc list-inside space-y-1 text-sm">
             {Number.isFinite(targetMaxPaymentDTI) && (
-              <li>To pass DTI for {loanType}, target this loan’s payment ≤ <strong>{ZAR.format(targetMaxPaymentDTI)}</strong> (DTI limit {pct(dtiLimit)}).</li>
+              <li>To pass DTI for {loanType}, target this loanâ€™s payment â‰¤ <strong>{ZAR.format(targetMaxPaymentDTI)}</strong> (DTI limit {pct(dtiLimit)}).</li>
             )}
             {Number.isFinite(targetMaxPaymentPTI) && (
-              <li>Keep payment ≤ <strong>{ZAR.format(targetMaxPaymentPTI)}</strong> to meet PTI cap {pct(ptiLimit)}.</li>
+              <li>Keep payment â‰¤ <strong>{ZAR.format(targetMaxPaymentPTI)}</strong> to meet PTI cap {pct(ptiLimit)}.</li>
             )}
             {!scoreOK && (
-              <li>Boost credit score: lower utilisation (aim ≤ 30%), avoid new inquiries for a few months, and resolve any late payments. A higher band often reduces your rate.</li>
+              <li>Boost credit score: lower utilisation (aim â‰¤ 30%), avoid new inquiries for a few months, and resolve any late payments. A higher band often reduces your rate.</li>
             )}
             {loanType === "Vehicle" && cleanNum(balloonPct) > 35 && (
-              <li>Consider lowering the balloon (≤ 35%) or extending term modestly to reduce monthly strain.</li>
+              <li>Consider lowering the balloon (â‰¤ 35%) or extending term modestly to reduce monthly strain.</li>
             )}
             {loanType === "Credit Card" && (
               <>
-                <li>Your first minimum should be around <strong>{ZAR.format(calc.ccMinPayment)}</strong>. Paying only the minimum prolongs payoff—aim higher.</li>
+                <li>Your first minimum should be around <strong>{ZAR.format(calc.ccMinPayment)}</strong>. Paying only the minimum prolongs payoffâ€”aim higher.</li>
                 <li>To be debt-free in 24 months, pay about <strong>{ZAR.format(ccPay24)}</strong> /month; in 12 months, ~<strong>{ZAR.format(ccPay12)}</strong> /month.</li>
               </>
             )}
@@ -688,7 +688,7 @@ export default function LoanTool() {
             {loanType === "Credit Card" && <div>Target payoff for estimate: <strong>{Math.max(1, Math.round(cleanNum(ccTargetMonths)||24))} months</strong></div>}
             <div>Max financed principal (estimate): <strong>{ZAR.format(qual.principalFinanced)}</strong></div>
             {loanType !== "Credit Card" && (
-              <div>Max purchase price (≈): <strong>{ZAR.format(qual.purchasePrice)}</strong></div>
+              <div>Max purchase price (â‰ˆ): <strong>{ZAR.format(qual.purchasePrice)}</strong></div>
             )}
           </div>
           <div className="mt-2 text-sm text-gray-600">
@@ -743,3 +743,5 @@ export default function LoanTool() {
     </div>
   );
 }
+
+
