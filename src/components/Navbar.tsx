@@ -2,127 +2,99 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import Image from "next/image";
+import React from "react";
 
 export default function NavBar() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const [openDrop, setOpenDrop] = useState(false);
 
-  const tools = [
-    { name: "Loan Tool", href: "/loan" },
-    { name: "SARS Tax Calculator Tool", href: "/tax" },
-    { name: "UIF Tool", href: "/uif" },
-    { name: "Price Compare Tool", href: "/compare" },
+  const primaryLinks = [
+    { href: "/", label: "Home" },
+    { href: "/about", label: "About Us" },
+    { href: "/publishing", label: "Publishing" },
+    { href: "/contact", label: "Contact Us" },
   ];
 
-  // === styles that match your pink "Loan Tool" button ===
-  const base = "rounded-full px-5 py-2.5 border transition";
-  const active = "bg-pink-600 text-white border-pink-600 shadow-sm";
-  const inactive = "bg-white text-gray-900 border-gray-300 hover:bg-pink-200";
+  const toolLinks = [
+    { href: "/loan", label: "Loan Tool" },
+    { href: "/tax", label: "Tax Tool" },
+    { href: "/uif", label: "UIF Tool" },
+    { href: "/compare", label: "Price Compare Tool" }, // ✅ added/renamed
+  ];
 
   const isActive = (href: string) =>
-    pathname === href || (href !== "/" && pathname?.startsWith(href));
+    pathname === href || pathname.startsWith(href + "/");
 
-  const tabClass = (href: string) => (isActive(href) ? `${base} ${active}` : `${base} ${inactive}`);
-
-  const dropItemClass = (href: string) =>
-    isActive(href)
-      ? "block rounded-full px-4 py-2 bg-pink-100 text-pink-700 font-medium"
-      : "block rounded-full px-4 py-2 hover:bg-pink-200";
-
-  const anyToolActive = useMemo(() => tools.some(t => isActive(t.href)), [pathname]);
+  const tabBase =
+    "glow rounded-2xl px-4 py-2 text-[15px] font-medium transition-all";
+  const tabIdle =
+    "text-gray-800 hover:text-pink-600 hover:bg-pink-50";
+  const tabActive =
+    "bg-pink-600 text-white shadow-sm";
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b">
-      <nav className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-        {/* Brand */}
-        <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition">
-          <img src="/scend-logo.png" alt="Scend Logo" className="h-8 w-8 object-contain" />
-          <span className="text-2xl font-bold text-pink-600">Scend</span>
+    <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-8">
+        {/* Logo + Title (glow on hover) */}
+        <Link href="/" className="glow flex items-center gap-3 rounded-2xl px-2 py-1">
+          <Image
+            src="/scend-logo.png"    // from /public
+            alt="Scend Logo"
+            width={36}
+            height={36}
+            className="rounded-full border border-pink-100 shadow-sm"
+            priority
+          />
+          <span className="text-lg font-semibold text-gray-900">
+            Welcome to Scend
+          </span>
         </Link>
 
-        {/* Desktop */}
-        <div className="hidden md:flex items-center gap-3">
-          <Link href="/" className={tabClass("/")}>Home</Link>
-
-          {/* Scend Tools (button should look active like the pink button when on any tool route) */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setOpenDrop(v => !v)}
-              className={`${base} ${anyToolActive ? active : inactive}`}
-              aria-haspopup="menu"
-              aria-expanded={openDrop}
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-2">
+          {/* Tools with hover dropdown */}
+          <div className="relative group">
+            <Link
+              href="/tools"
+              className={`${tabBase} ${isActive("/tools") ? tabActive : tabIdle}`}
             >
-              <span className="mr-1.5 font-medium">Scend Tools</span>
-              <span className={`inline-block transition-transform ${openDrop ? "rotate-180" : ""}`}>▾</span>
-            </button>
+              Tools
+            </Link>
 
-            {openDrop && (
-              <div
-                role="menu"
-                className="absolute right-0 mt-2 w-64 rounded-2xl border bg-white shadow-lg p-2"
-                onMouseLeave={() => setOpenDrop(false)}
-              >
-                {tools.map(t => (
-                  <Link
-                    key={t.href}
-                    href={t.href}
-                    className={dropItemClass(t.href)}
-                    onClick={() => setOpenDrop(false)}
-                  >
-                    {t.name}
-                  </Link>
-                ))}
-              </div>
-            )}
+            <div
+              className="
+                invisible opacity-0 group-hover:visible group-hover:opacity-100
+                group-focus-within:visible group-focus-within:opacity-100
+                transition-opacity duration-150
+                absolute left-0 mt-2 w-56
+                rounded-2xl border border-gray-200 bg-white shadow-lg
+                p-2
+              "
+            >
+              {toolLinks.map((t) => (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  className="glow block rounded-xl px-3 py-2 text-[14px] text-gray-800 hover:bg-gray-50"
+                >
+                  {t.label}
+                </Link>
+              ))}
+            </div>
           </div>
 
-          <Link href="/about" className={tabClass("/about")}>About Us</Link>
-          <Link href="/contact" className={tabClass("/contact")}>Contact Us</Link>
+          {/* Other tabs */}
+          {primaryLinks.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className={`${tabBase} ${isActive(href) ? tabActive : tabIdle}`}
+            >
+              {label}
+            </Link>
+          ))}
         </div>
-
-        {/* Mobile hamburger */}
-        <button
-          onClick={() => setOpen(v => !v)}
-          className="md:hidden inline-flex items-center rounded-full border px-3 py-2"
-          aria-label="Toggle menu"
-        >
-          <span className="text-xl">☰</span>
-        </button>
-      </nav>
-
-      {/* Mobile menu */}
-      {open && (
-        <div className="md:hidden border-t">
-          <div className="mx-auto max-w-6xl px-4 py-3 space-y-3">
-            <Link href="/" className={tabClass("/")} onClick={() => setOpen(false)}>Home</Link>
-
-            <details className="group">
-              <summary className={`${base} ${anyToolActive ? active : inactive} cursor-pointer flex items-center justify-between`}>
-                <span className="font-medium">Scend Tools</span>
-                <span className="transition-transform group-open:rotate-180">▾</span>
-              </summary>
-              <div className="mt-2 pl-1 space-y-2">
-                {tools.map(t => (
-                  <Link
-                    key={t.href}
-                    href={t.href}
-                    className={dropItemClass(t.href)}
-                    onClick={() => setOpen(false)}
-                  >
-                    {t.name}
-                  </Link>
-                ))}
-              </div>
-            </details>
-
-            <Link href="/about" className={tabClass("/about")} onClick={() => setOpen(false)}>About Us</Link>
-            <Link href="/contact" className={tabClass("/contact")} onClick={() => setOpen(false)}>Contact Us</Link>
-          </div>
-        </div>
-      )}
-    </header>
+      </div>
+    </nav>
   );
 }

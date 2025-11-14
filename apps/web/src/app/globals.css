@@ -1,0 +1,13 @@
+﻿/* App Router global styles */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; font-family: system-ui, Arial, sans-serif; }
+.container { max-width: 64rem; margin: 0 auto; padding: 0 1rem; }
+
+.site-header { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #eee; }
+.site-header .brand { font-weight: 700; padding: 1rem 0; display: inline-block; }
+.nav { float: right; display: flex; gap: 1rem; align-items: center; height: 100%; }
+.nav a { text-decoration: none; color: #111; padding: 1rem 0; }
+.nav a:hover { text-decoration: underline; }
+
+main.container { padding: 2rem 1rem; }
+.site-footer { border-top: 1px solid #eee; padding: 1rem 0; color: #666; font-size: 0.9rem; text-align: center; }

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import Image from "next/image";
@@ -18,30 +18,30 @@ export default function NavBar() {
   const idle = "bg-white text-gray-800 border-gray-200 hover:bg-pink-100 hover:text-pink-700";
 
   return (
-    <nav className="w-full border-b bg-white/80 backdrop-blur sticky top-0 z-50">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+    <nav className="glow w-full border-b bg-white/80 backdrop-blur sticky top-0 z-50">
+      <div className="glow mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
         {/* Logo with 'Scend' only */}
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="glow flex items-center gap-2">
           <Image
             src="/scend-logo.png"
             alt="Scend Logo"
             width={38}
             height={38}
-            className="rounded-lg"
+            className="glow rounded-lg"
             priority
           />
-          <span className="font-bold text-pink-700 text-xl md:text-2xl">Scend</span>
+          <span className="glow font-bold text-pink-700 text-xl md:text-2xl">Scend</span>
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-2">
+        <div className="glow hidden md:flex items-center gap-2">
           {/* Home */}
           <Link href="/" className={`${base} ${isActive("/") ? active : idle}`}>
             Home
           </Link>
 
           {/* Dropdown: Scend Tools */}
-          <div className="relative">
+          <div className="glow relative">
             <button
               onClick={() => setOpenDrop((v) => !v)}
               className={`${base} flex items-center gap-1 ${
@@ -56,14 +56,14 @@ export default function NavBar() {
               aria-expanded={openDrop}
             >
               Scend Tools
-              <span className={`transition-transform ${openDrop ? "rotate-180 text-pink-500" : "text-gray-500"}`}>▾</span>
+              <span className={`transition-transform ${openDrop ? "rotate-180 text-pink-500" : "text-gray-500"}`}>?</span>
             </button>
             {openDrop && (
-              <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-gray-200 bg-white shadow-lg z-50">
-                <Link href="/loan" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-100">Loan Tool</Link>
-                <Link href="/tax" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-100">SARS Tax Tool</Link>
-                <Link href="/uif" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-100">UIF Tool</Link>
-                <Link href="/price" className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-100">Price Compare Tool</Link>
+              <div className="glow absolute right-0 mt-2 w-56 rounded-2xl border border-gray-200 bg-white shadow-lg z-50">
+                <Link href="/loan" className="glow block px-4 py-2 text-sm text-gray-700 hover:bg-pink-100">Loan Tool</Link>
+                <Link href="/tax" className="glow block px-4 py-2 text-sm text-gray-700 hover:bg-pink-100">SARS Tax Tool</Link>
+                <Link href="/uif" className="glow block px-4 py-2 text-sm text-gray-700 hover:bg-pink-100">UIF Tool</Link>
+                <Link href="/price" className="glow block px-4 py-2 text-sm text-gray-700 hover:bg-pink-100">Price Compare Tool</Link>
               </div>
             )}
           </div>
@@ -83,17 +83,17 @@ export default function NavBar() {
         {/* Mobile toggle */}
         <button
           onClick={() => setOpen((v) => !v)}
-          className="md:hidden inline-flex items-center rounded-xl border border-gray-200 px-3 py-2 text-gray-700"
+          className="glow md:hidden inline-flex items-center rounded-xl border border-gray-200 px-3 py-2 text-gray-700"
           aria-label="Toggle menu"
         >
-          <span className={`transition-transform ${open ? "rotate-180 text-pink-600" : "text-gray-500"}`}>▾</span>
+          <span className={`transition-transform ${open ? "rotate-180 text-pink-600" : "text-gray-500"}`}>?</span>
         </button>
       </div>
 
       {/* Mobile Menu */}
       {open && (
-        <div className="md:hidden border-t bg-white">
-          <div className="mx-auto max-w-6xl px-4 py-3 grid gap-2">
+        <div className="glow md:hidden border-t bg-white">
+          <div className="glow mx-auto max-w-6xl px-4 py-3 grid gap-2">
             <Link href="/" onClick={() => setOpen(false)} className={`block ${base} ${isActive("/") ? active : idle}`}>Home</Link>
 
             {/* Scend Tools (mobile) */}
@@ -112,20 +112,20 @@ export default function NavBar() {
                 aria-expanded={openDrop}
               >
                 Scend Tools
-                <span className={`transition-transform ${openDrop ? "rotate-180 text-pink-500" : "text-gray-500"}`}>▾</span>
+                <span className={`transition-transform ${openDrop ? "rotate-180 text-pink-500" : "text-gray-500"}`}>?</span>
               </button>
               {openDrop && (
-                <div className="mt-2 grid gap-1 pl-4">
-                  <Link href="/loan" onClick={() => setOpen(false)} className="block text-gray-700 text-sm py-1">
+                <div className="glow mt-2 grid gap-1 pl-4">
+                  <Link href="/loan" onClick={() => setOpen(false)} className="glow block text-gray-700 text-sm py-1">
                     Loan Tool
                   </Link>
-                  <Link href="/tax" onClick={() => setOpen(false)} className="block text-gray-700 text-sm py-1">
+                  <Link href="/tax" onClick={() => setOpen(false)} className="glow block text-gray-700 text-sm py-1">
                     SARS Tax Tool
                   </Link>
-                  <Link href="/uif" onClick={() => setOpen(false)} className="block text-gray-700 text-sm py-1">
+                  <Link href="/uif" onClick={() => setOpen(false)} className="glow block text-gray-700 text-sm py-1">
                     UIF Tool
                   </Link>
-                  <Link href="/price" onClick={() => setOpen(false)} className="block text-gray-700 text-sm py-1">
+                  <Link href="/price" onClick={() => setOpen(false)} className="glow block text-gray-700 text-sm py-1">
                     Price Compare Tool
                   </Link>
                 </div>
@@ -141,4 +141,5 @@ export default function NavBar() {
     </nav>
   );
 }
+
 

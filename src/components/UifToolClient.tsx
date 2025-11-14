@@ -1,4 +1,21 @@
 ﻿"use client";
+
 import dynamic from "next/dynamic";
-const UifTool = dynamic(() => import("../tools/UifTool"), { ssr: false });
-export default function UifToolClient() { return <UifTool />; }
+
+// ✅ Load UIF Tool dynamically (client-side only)
+const UifTool = dynamic(() => import("@/tools/UifTool"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64 text-gray-600">
+      Loading UIF Tool...
+    </div>
+  ),
+});
+
+export default function UifToolClient() {
+  return (
+    <div className="animate-fadeIn">
+      <UifTool />
+    </div>
+  );
+}

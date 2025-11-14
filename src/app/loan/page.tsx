@@ -1,15 +1,11 @@
-﻿import LoanToolClient from "../../components/loan/LoanToolClient";
-import { computeLoanOutputs, parseZARNumber, NCA_MAX_APR } from "@/lib/loanLogic";
+﻿// src/app/loan/page.tsx
+import LoanToolClient from "./LoanToolClient";
 
-export default function Page() {
-  return (
-    <section className="mx-auto max-w-5xl px-4 py-6">
-      <LoanToolClient />
-    </section>
-  );
+export const metadata = {
+  title: "Loan Tool | Scend",
+  description: "NCA-compliant loan affordability and qualification tool",
+};
+
+export default function LoanToolPage() {
+  return <LoanToolClient />;
 }
-
-
-
-
-

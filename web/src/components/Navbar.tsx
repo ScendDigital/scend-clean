@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import Link from "next/link";
 
 const linkCls = "text-gray-700 hover:text-pink-600 transition-colors";
@@ -6,14 +6,14 @@ const container = "mx-auto max-w-6xl px-4";
 
 export default function Navbar() {
   return (
-    <nav className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur">
+    <nav className="glow sticky top-0 z-10 border-b bg-white/80 backdrop-blur">
       <div className={container}>
-        <div className="flex items-center gap-6 h-14">
-          <Link href="/" className="flex items-center gap-2">
-            <img src="/scend-logo" alt="Scend" width="28" height="28" className="rounded" />
-            <span className="font-bold text-pink-600">Scend</span>
+        <div className="glow flex items-center gap-6 h-14">
+          <Link href="/" className="glow flex items-center gap-2">
+            <img src="/scend-logo" alt="Scend" width="28" height="28" className="glow rounded" />
+            <span className="glow font-bold text-pink-600">Scend</span>
           </Link>
-          <div className="flex items-center gap-5 text-[15px]">
+          <div className="glow flex items-center gap-5 text-[15px]">
             <Link href="/" className={linkCls}>Home</Link>
             <Link href="/loan" className={linkCls}>Loan Tool</Link>
             <Link href="/tax" className={linkCls}>Tax Tool</Link>
@@ -25,3 +25,4 @@ export default function Navbar() {
     </nav>
   );
 }
+

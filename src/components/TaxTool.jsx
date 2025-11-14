@@ -287,7 +287,7 @@ export default function TaxTool() {
       <div className="flex gap-3">
         <button className="px-4 py-2 rounded bg-black text-white" onClick={onCalculate}>Calculate</button>
         <button className="px-4 py-2 rounded border" onClick={onExportPDF}>Export PDF</button>
-        <button className="px-4 py-2 rounded border" onClick={onClear}>Clear</button>
+        <button className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-gray-900 bg-white ring-1 ring-gray-200 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-pink-200 disabled:opacity-50px-4 py-2 rounded border
       </div>
 
       {/* Results */}
@@ -352,3 +352,4 @@ export default function TaxTool() {
     </div>
   );
 }
+

@@ -1,2 +1,73 @@
-﻿// AUTO-GENERATED: Keep all navbar imports pointing to the single source of truth.
-export { default } from "@/components/shared/NavBar";
+﻿"use client";
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+type NavItem = { label: string; href: string };
+
+const NAV: NavItem[] = [
+  { label: "Home", href: "/" },
+  { label: "About Us", href: "/about" },
+  { label: "Contact Us", href: "/contact" },
+];
+
+function cx(...c:(string|false|undefined)[]){ return c.filter(Boolean).join(" "); }
+const isActive = (pathname:string, href:string) =>
+  href === "/" ? pathname === "/" : pathname === href || pathname?.startsWith(href + "/");
+
+export default function NavBar(){
+  const [open,setOpen]=React.useState(false);
+  const pathname=usePathname();
+  React.useEffect(()=>setOpen(false),[pathname]);
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-[var(--scend-gray-200)] bg-white/70 backdrop-blur">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-3" aria-label="Scend Home">
+            <img src="/scend-logo.png" alt="Scend" className="h-7 w-auto" />
+            <span className="hidden text-lg font-semibold text-[var(--scend-gray-900)] sm:inline">Scend</span>
+          </Link>
+          <ul className="hidden items-center gap-2 md:flex">
+            {NAV.map(i=>(
+              <li key={i.href}>
+                <Link
+                  href={i.href}
+                  className={cx(
+                    "rounded-2xl px-3 py-2 text-sm font-medium transition",
+                    isActive(pathname!, i.href)
+                      ? "bg-[var(--scend-pink-50)] text-[var(--scend-pink-700)] ring-1 ring-[var(--scend-pink-100)]"
+                      : "text-[var(--scend-gray-700)] hover:bg-[var(--scend-gray-100)] hover:text-[var(--scend-gray-900)]"
+                  )}
+                >{i.label}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Mobile burger */}
+        <button onClick={()=>setOpen(v=>!v)} aria-label="Toggle menu" className="md:hidden rounded-xl p-2 text-[var(--scend-gray-700)] hover:bg-[var(--scend-gray-100)]">
+          <svg className={cx("h-6 w-6 transition", open && "rotate-90")} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d={open? "M6 18L18 6M6 6l12 12":"M3 6h18M3 12h18M3 18h18"} />
+          </svg>
+        </button>
+      </nav>
+
+      {/* Mobile menu */}
+      <div className={cx("md:hidden overflow-hidden bg-white/90 backdrop-blur border-t border-[var(--scend-gray-200)] transition-[max-height,opacity] duration-200", open? "max-h-96 opacity-100":"max-h-0 opacity-0")}>
+        <div className="px-4 py-3">
+          <ul className="grid gap-1">
+            {NAV.map(i=>(
+              <li key={i.href}>
+                <Link href={i.href} className={cx(
+                  "block rounded-xl px-3 py-2 text-sm font-medium",
+                  isActive(pathname!, i.href) ? "bg-[var(--scend-pink-50)] text-[var(--scend-pink-700)]" : "text-[var(--scend-gray-800)] hover:bg-[var(--scend-gray-100)]"
+                )}>{i.label}</Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </header>
+  );
+}

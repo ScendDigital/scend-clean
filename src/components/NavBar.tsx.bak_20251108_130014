@@ -1,0 +1,117 @@
+"use client";
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+type NavItem = { label: string; href: string; external?: boolean; };
+
+const LEFT_NAV: NavItem[] = [
+  { label: "Home", href: "/" },
+  { label: "Loan", href: "/loan" },
+  { label: "Tax", href: "/tax" },
+  { label: "UIF", href: "/uif" },
+  { label: "Price Compare", href: "/price-compare" },
+];
+const RIGHT_NAV: NavItem[] = [
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
+];
+
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+export default function NavBar() {
+  const pathname = usePathname();
+  const [open, setOpen] = React.useState(false);
+  React.useEffect(() => { setOpen(false); }, [pathname]);
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname === href || pathname?.startsWith(href + "/");
+
+  return (
+    <header className="sticky top-0 z-40 w-full border-b border-gray-200 bg-white/80 backdrop-blur">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
+        <div className="flex items-center gap-6">
+          <Link href="/" aria-label="Scend Home" className="flex items-center gap-3">
+            <img src="/scend-logo.png" alt="Scend" className="h-8 w-auto rounded-md" />
+            <span className="hidden text-lg font-semibold tracking-tight text-gray-900 sm:inline">Scend</span>
+          </Link>
+          <ul className="hidden items-center gap-1 md:flex">
+            {LEFT_NAV.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                    isActive(item.href) ? "bg-pink-100 text-pink-700" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <ul className="hidden items-center gap-1 md:flex">
+          {RIGHT_NAV.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className={cn(
+                  "rounded-xl px-3 py-2 text-sm font-medium transition-colors",
+                  isActive(item.href) ? "bg-pink-100 text-pink-700" : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                )}
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+          <li>
+            <Link href="/loan" className="ml-2 inline-flex items-center rounded-2xl border border-pink-500 px-3 py-2 text-sm font-semibold text-pink-600 hover:bg-pink-50">
+              Use Tools
+            </Link>
+          </li>
+        </ul>
+        <button
+          type="button"
+          aria-label="Toggle menu"
+          onClick={() => setOpen((v) => !v)}
+          className="inline-flex items-center justify-center rounded-xl p-2 text-gray-700 hover:bg-gray-100 md:hidden"
+        >
+          <svg className={cn("h-6 w-6 transition-transform", open && "rotate-90")} viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            {open ? (
+              <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M3 12h18M3 18h18" />
+            )}
+          </svg>
+        </button>
+      </nav>
+      <div className={cn("md:hidden transition-[max-height,opacity] duration-200 ease-out overflow-hidden bg-white/90 backdrop-blur", open ? "max-h-96 opacity-100" : "max-h-0 opacity-0")}>
+        <div className="border-t border-gray-200 px-4 py-3">
+          <ul className="grid grid-cols-1 gap-1">
+            {[...LEFT_NAV, ...RIGHT_NAV].map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "block rounded-xl px-3 py-2 text-sm font-medium",
+                    isActive(item.href) ? "bg-pink-100 text-pink-700" : "text-gray-800 hover:bg-gray-100"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+            <li className="pt-2">
+              <Link href="/loan" className="block rounded-2xl border border-pink-500 px-3 py-2 text-center text-sm font-semibold text-pink-600 hover:bg-pink-50">
+                Use Tools
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </header>
+  );
+}

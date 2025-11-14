@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -49,3 +50,28 @@ next-env.d.ts
 *.bak
 *.broken-*.tsx
 
+=======
+﻿# Node.js & Next.js
+node_modules/
+.next/
+out/
+dist/
+build/
+.env
+.env.local
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.DS_Store
+.vercel/
+.turbo/
+coverage/
+
+*.bak
+.vercel
+
+# Local noise
+apps/web/dev.log
+*.bak
+_archive/
+>>>>>>> b543707cac1442f5712df5eb7a509ebabf788c52

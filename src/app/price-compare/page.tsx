@@ -3,7 +3,7 @@
 export default function Page() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="mb-6 text-3xl font-bold">Price Compare Tool</h1>
+      <h1 className="text-3xl font-bold text-[var(--scend-gray-900)] md:text-4xl">Price Compare</h1>
       <div className="rounded-2xl border p-6 shadow-sm">
         <p className="text-lg font-semibold">Coming soon 🚧</p>
         <p className="mt-2 opacity-80">

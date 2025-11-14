@@ -1,0 +1,23 @@
+﻿"use client";
+
+export default function AboutPage() {
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-12 text-center">
+      {/* Heading now matches navbar font weight and color */}
+      <h1 className="text-3xl font-bold text-[var(--scend-gray-900)] md:text-4xl">About Scend</h1>
+
+      <p className="text-gray-700 text-lg max-w-2xl mx-auto leading-relaxed">
+        Scend is a diverse company offering digital and financial services,
+        plumbing, maintenance, and more. We are not limited — we believe in
+        innovation, inclusivity, and building tools that simplify life for all
+        South Africans.
+      </p>
+
+      <p className="text-gray-700 text-lg max-w-2xl mx-auto mt-4 leading-relaxed">
+        From smart loan qualification and SARS tax clarity to UIF estimating and
+        transparent price comparison, Scend delivers technology-driven solutions
+        with integrity and compliance at the core.
+      </p>
+    </main>
+  );
+}

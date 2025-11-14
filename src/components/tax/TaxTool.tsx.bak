@@ -107,7 +107,7 @@ export default function TaxTool() {
 
   const [mode, setMode] = useState<"yearly" | "monthly">("monthly");
 
-  // ✅ Independent gross values
+  // Independent gross values
   const [grossMonthly, setGrossMonthly] = useState<number | "">("");
   const [grossAnnual, setGrossAnnual] = useState<number | "">("");
 
@@ -120,7 +120,7 @@ export default function TaxTool() {
   const [daysWorked, setDaysWorked] = useState<number | "">("");
   const [daysInMonth, setDaysInMonth] = useState<number | "">("");
 
-  // Retirement contributions (monthly if mode=monthly, otherwise annual)
+  // Retirement contributions (monthly if mode=monthly, else annual)
   const [retirementContribution, setRetirementContribution] = useState<number | "">("");
 
   // Brand/logo
@@ -147,12 +147,12 @@ export default function TaxTool() {
     return r;
   }, [age, cfg]);
 
-  // Manual calculation: only when clicking "Calculate"
+  // Manual calculation only when clicking "Calculate"
   const [computed, setComputed] = useState<Computed | null>(null);
   const [dirty, setDirty] = useState(false);
 
   function computeNow() {
-    // pick the relevant gross for the selected mode (the other is ignored)
+    // pick gross matching mode
     const g = Number((mode === "monthly" ? grossMonthly : grossAnnual) || 0);
     if (!Number.isFinite(g) || g < 0) { setComputed(null); return; }
 
@@ -164,26 +164,33 @@ export default function TaxTool() {
     const dm = typeof daysInMonth === "number" ? daysInMonth : Number(daysInMonth || 0);
     const prorataFactor = prorated && dw > 0 && dm > 0 ? Math.min(1, dw / dm) : 1;
 
-    // Remuneration-like base for RA cap: monthlyBase + includable allowance (before RA)
+    // Remuneration-like base used for RA cap: monthlyBase + includable allowance (pre-RA)
     const monthlyRemuneration = (monthlyBase + monthlyAllowanceIncludable) * prorataFactor;
 
-    // Annualisation before RA deduction
+    // Annualised taxable BEFORE RA deduction
     const annualTaxableBeforeRA = monthlyRemuneration * 12;
 
-    // Retirement contribution (annualised if needed)
+    // ---------------- RA deduction (CORRECT) ----------------
+    // Contribution input: monthly if mode=monthly, else annual
     const contribAnnual = mode === "monthly"
       ? Number(retirementContribution || 0) * 12
       : Number(retirementContribution || 0);
 
-    // SARS RA cap: min( contribution, 27.5% * max(annualRemuneration, annualTaxableBeforeRA), 350000 )
+    // Cap base = greater of (annual remuneration, annual taxable before RA)
     const annualRemuneration = monthlyRemuneration * 12;
     const raCapBase = Math.max(annualRemuneration, annualTaxableBeforeRA);
+
+    // Allowed = min(contribution, 27.5% * capBase, 350_000), floored at 0
     const cap27_5 = 0.275 * raCapBase;
     const annualRAAllowed = Math.max(0, Math.min(contribAnnual, cap27_5, 350_000));
 
+    // Apply RA deduction
     const annualTaxableAfterRA = Math.max(0, annualTaxableBeforeRA - annualRAAllowed);
 
+    // Annual normal tax (after RA), then apply rebates
     const annualTax = Math.max(0, normalTaxAnnual(annualTaxableAfterRA, cfg.brackets) - rebates);
+
+    // Monthly before credits, then subtract MTC (if member)
     const monthlyBeforeMTC = annualTax / 12;
     const mtc = medicalMember ? monthlyMTC(Math.max(0, dependants ?? 0), cfg.mtc) : 0;
     const monthlyPAYE = Math.max(0, monthlyBeforeMTC - mtc);
@@ -202,7 +209,7 @@ export default function TaxTool() {
     setDirty(false);
   }
 
-  // --- Sharing helpers ---
+  // --- Share helpers ---
   function shareSummary() {
     if (!computed) return "SARS Tax result (Scend): Enter inputs and click Calculate.";
     return [
@@ -344,7 +351,7 @@ export default function TaxTool() {
             </select>
           </Field>
 
-          {/* ✅ Independent gross fields */}
+          {/* Independent gross fields */}
           <Field label="Gross Monthly Income (R)" hint="Used when mode = Monthly. Annual value is preserved separately.">
             <input
               type="number" min={0}

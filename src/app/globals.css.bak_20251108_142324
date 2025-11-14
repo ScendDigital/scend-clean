@@ -1,0 +1,17 @@
+﻿@import "tailwindcss";
+
+/* Optional design tokens */
+:root {
+  --scend-pink: #ec4899;     /* pink-500 */
+  --scend-pink-700: #be185d; /* pink-700 */
+  --scend-gray-900: #111827;
+  --scend-gray-700: #374151;
+  --scend-gray-200: #e5e7eb;
+  --scend-gray-100: #f3f4f6;
+}
+
+html, body { height: 100%; }
+
+/* Keep links simple; component classes will handle most styling */
+a { color: var(--scend-pink-700); text-decoration: none; }
+a:hover { text-decoration: underline; }

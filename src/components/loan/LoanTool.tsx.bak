@@ -1,678 +1,567 @@
 ﻿"use client";
 
-import { NCA_MAX_APR } from "../../lib/loanLogic";
-import { useMemo, useState } from "react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import * as React from "react";
+import {
+  serviceFeeMonthly,
+  disposableIncome as diNetOnly,
+  dtiAfter,
+  pmt,
+  monthlyRate,
+  initiationFee,
+  FINANCE_INIT_FEE,
+  getCapAPRByLoanType,
+} from "../../lib/compliance";
+import { caps } from "../../lib/caps";
+import { minExpenseNorm } from "../../lib/men";
 
-/** Keep local alias for consistency with existing code paths. */
-const NCA_MAX_RATE = NCA_MAX_APR;
+/* ───────────────── Helpers/const ───────────────── */
+const currency = (n: number) =>
+  (isFinite(n) ? n : 0).toLocaleString("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 2 });
 
-type LoanType = "personal" | "vehicle" | "home" | "credit_card";
+const DEFAULT_MIN_PCT = 0.03;
+const MAX_END_AGE = 70;
 
-function clamp(n: number, min: number, max: number) { return Math.min(Math.max(n, min), max); }
-function round2(n: number) { return Math.round(n * 100) / 100; }
-function fmtMoney(n: number) { return n.toLocaleString("en-ZA", { style: "currency", currency: "ZAR", maximumFractionDigits: 2 }); }
+const LOAN_TYPES = ["Personal Loan", "Vehicle Finance", "Home Loan", "Credit Card"] as const;
+const EMPLOYMENT_TYPES = [
+  "Permanent (full-time)",
+  "Contract",
+  "Temporary",
+  "Self-employed",
+  "Unemployed",
+  "Pensioner/Retired",
+  "Student",
+] as const;
 
-/** Parse numbers accepting comma decimals (e.g., "11,49"). */
-function toNum(input: any): number {
-  if (input === "" || input === null || input === undefined) return 0;
-  const s = String(input).trim().replace(/[^\d,.\-]/g, "");
-  let norm = s;
-  if (/,/.test(s) && /\./.test(s)) norm = s.replace(/,/g, "");
-  else norm = s.replace(",", ".");
-  const n = parseFloat(norm);
-  return Number.isFinite(n) ? n : 0;
-}
-
-/** PMT with optional FV (balloon). Rates are monthly decimals. */
-function pmt(rate: number, nper: number, pv: number, fv: number = 0): number {
-  if (rate === 0) return -(pv + fv) / nper;
-  const r1 = Math.pow(1 + rate, nper);
-  return -(pv * rate * r1 + fv * rate) / (r1 - 1);
-}
-
-type Result = {
-  product: LoanType;
-  rateUsed: number;       // annual %
-  monthlyRate: number;    // decimal
-  financedPV: number;     // principal - deposit (or CC balance)
-  balloonFV: number;      // FV at term end
-  payment: number;        // monthly repayment (core, excl. CC fee in target-mode)
-  firstMonthOutflow: number; // includes fee for CC minimum-mode
-  avgMonthlyOutflow?: number; // CC minimum-mode average payment including fees
-  totalInterest: number;
-  totalFees: number;      // service fees (credit card)
-  totalRepayable: number;
-  dti: number;            // decimal
-  affordabilityNote: string;
-  approval: { bucket: "High"|"Moderate"|"Caution"|"Low"; chancePct: number; reason: string };
-  scoreAuto?: number;     // auto-estimated score (0–999)
-  monthsToClear?: number; // credit card minimum-mode payoff months
-  negAmWarning?: boolean; // credit card: min payment < interest+fee
-};
-
-const Card: React.FC<{ title?: string; children: React.ReactNode; footer?: React.ReactNode; className?: string }> = ({ title, children, footer, className }) => (
-  <div className={`rounded-2xl border shadow-sm bg-white ${className ?? ""}`}>
-    {title && <div className="px-5 py-4 border-b"><h3 className="font-semibold">{title}</h3></div>}
-    <div className="px-5 py-4">{children}</div>
-    {footer && <div className="px-5 py-3 border-t bg-gray-50 rounded-b-2xl">{footer}</div>}
-  </div>
-);
-
-const Field: React.FC<{ label: string; children: React.ReactNode; hint?: string; right?: React.ReactNode }> = ({ label, children, hint, right }) => (
-  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_auto] gap-3 items-center">
-    <div className="text-sm text-gray-600">{label}</div>
-    <div>{children}</div>
-    {right && <div className="justify-self-end">{right}</div>}
-    {hint && <div className="md:col-start-2 text-xs text-gray-500">{hint}</div>}
-  </div>
-);
-
-type AprExplain = { source: "auto" | "manual"; dti?: number; score?: number; capped?: boolean; value: number };
-
-/** Simple auto-APR heuristic (product base ± DTI/score nudges, capped). */
-function deriveApr(
-  loanType: LoanType,
-  provisionalDti: number,           // 0..1
-  score?: number                    // 0..999 (optional)
-): number {
-  let base =
-    loanType === "personal"    ? 18 :
-    loanType === "vehicle"     ? 14 :
-    loanType === "home"        ? 12 :
-                                  21; // credit_card
-  if (provisionalDti <= 0.30) base -= 1.0;
-  else if (provisionalDti <= 0.40) base += 0.5;
-  else if (provisionalDti <= 0.50) base += 1.25;
-  else base += 2.0;
-
-  if (typeof score === "number" && isFinite(score)) {
-    if (score >= 720) base -= 1.0;
-    else if (score >= 680) base -= 0.5;
-    else if (score <= 560) base += 1.0;
+function employmentScoreAdj(type: string) {
+  switch (type) {
+    case "Permanent (full-time)": return +20;
+    case "Contract": return -5;
+    case "Temporary": return -10;
+    case "Self-employed": return -10;
+    case "Unemployed": return -60;
+    case "Pensioner/Retired": return -15;
+    case "Student": return -20;
+    default: return 0;
   }
-
-  base = clamp(base, 6, NCA_MAX_RATE);
-  return Math.round(base * 100) / 100;
+}
+function aprFromScore(score: number) {
+  if (score >= 700) return 18.0;
+  if (score >= 660) return 20.5;
+  if (score >= 620) return 22.5;
+  if (score >= 580) return 24.5;
+  return 27.75;
 }
 
+/* ───────────────── Component ───────────────── */
 export default function LoanTool() {
-  // --- Inputs ---
-  const [loanType, setLoanType] = useState<LoanType>("personal");
+  const [f, setF] = React.useState({
+    loanType: "Personal Loan",
+    amount: 100_000,
+    term: 60,
+    aprPercent: 24,
+    autoAPR: true,
 
-  const [enforceCap, setEnforceCap] = useState(true);
-  const [amount, setAmount] = useState<number | "">("");
-  const [deposit, setDeposit] = useState<number | "">("");
-  const [balloonPct, setBalloonPct] = useState<number | "">("");
-  const [termMonths, setTermMonths] = useState<number | "">(60);
-  const [apr, setApr] = useState<number | string>("");
+    creditScore: 650,
+    employmentType: "Permanent (full-time)",
+    ageYears: 35,
 
-  const [income, setIncome] = useState<number | "">("");
-  const [expenses, setExpenses] = useState<number | "">("");
-  const [otherDebt, setOtherDebt] = useState<number | "">("");
+    repoPct: caps.repoDefaultPct, // mortgage cap input
 
-  // Credit score handling
-  const [autoScore, setAutoScore] = useState(true);
-  const [autoApr, setAutoApr] = useState(true);
-  const [creditScoreManual, setCreditScoreManual] = useState<number | "">("");
+    depositAmount: 0,            // home & vehicle
+    balloonPct: 0,               // vehicle
 
-  // Credit card–specific inputs
-  const [ccMinPct, setCcMinPct] = useState<number | "">(3);
-  const [ccMinRand, setCcMinRand] = useState<number | "">(25);
-  const [ccFee, setCcFee] = useState<number | "">(69);
-  const [ccMinOnly, setCcMinOnly] = useState<boolean>(true);
-  const [ccTotalLimit, setCcTotalLimit] = useState<number | "">("");
+    gross: 25_000,
+    net: 20_000,
+    declaredExpenses: 9_000,
+    existingMonthlyDebts: 1_500,
+    owedBalance: 0,
+    applyMinPctFromBalance: true,
+    dependants: 3,
 
-  // Results & UI
-  const [res, setRes] = useState<Result | null>(null);
-  const [dirty, setDirty] = useState(false);
-  const markDirty = <T,>(setter: (v:T)=>void) => (v:T) => { setter(v); setDirty(true); };
+    requestedServiceFee: caps.serviceFeeMax,
+  });
 
-  // (keep explain setter to avoid unused var lint)
-  const [, setLastAprExplain] = useState<AprExplain | null>(null);
-
-  // Derived helpers (per product)
-  const limits = useMemo(() => {
-    switch (loanType) {
-      case "personal": return { min: 6, max: 72, balloonMax: 0, allowBalloon: false, showDeposit: true, labelAmount: "Loan amount (R)" };
-      case "vehicle":  return { min: 12, max: 72, balloonMax: 40, allowBalloon: true,  showDeposit: true, labelAmount: "Vehicle price (R)" };
-      case "home":     return { min: 120, max: 360, balloonMax: 0, allowBalloon: false, showDeposit: true, labelAmount: "Property price (R)" };
-      case "credit_card": return { min: 6, max: 72, balloonMax: 0, allowBalloon: false, showDeposit: false, labelAmount: "Current balance (R)" };
-    }
-  }, [loanType]);
-
-  // --- Auto score (0–999) heuristic ---
-  function estimateScore(dti: number, aprPct: number, util?: number): number {
-    let score = 650;
-    if (isFinite(dti)) {
-      if (dti < 0.2) score += 120;
-      else if (dti < 0.3) score += 80;
-      else if (dti < 0.4) score += 40;
-      else if (dti < 0.5) score += 0;
-      else if (dti < 0.6) score -= 60;
-      else score -= 120;
-    }
-    if (aprPct >= NCA_MAX_RATE * 0.9) score -= 60;
-    else if (aprPct >= 20) score -= 30;
-    else if (aprPct <= 12) score += 20;
-
-    if (util !== undefined && isFinite(util)) {
-      if (util < 0.3) score += 60;
-      else if (util < 0.5) score += 20;
-      else if (util < 0.75) score -= 20;
-      else score -= 80;
-    }
-    return clamp(Math.round(score), 0, 999);
-  }
+  const [results, setResults] = React.useState<any>(null);
 
   function compute() {
-    // Base inputs
-    const amt = toNum(amount);
-    const dep = toNum(deposit);
-    const balPct = toNum(balloonPct);
-    const n = toNum(termMonths);
-    const inc = toNum(income);
-    const exp = toNum(expenses);
-    const oth = toNum(otherDebt);
+    const notes: string[] = [];
 
-    // Provisional payment to seed DTI
-    let placeholderPayment = 0;
-    if (loanType === "credit_card") {
-      const minPct = toNum(ccMinPct) / 100;
-      const minRand = toNum(ccMinRand);
-      placeholderPayment = Math.max(minRand, amt * minPct) + toNum(ccFee);
-    } else {
-      const pvSeed = Math.max(0, amt - (loanType !== "credit_card" && limits?.showDeposit ? Math.max(0, dep) : 0));
-      const balloonFVSeed = loanType === "vehicle" ? (amt * clamp(balPct, 0, limits?.balloonMax ?? 0) / 100) : 0;
-      const rateSeed = 18 / 100 / 12; // neutral seed 18% APR -> monthly
-      placeholderPayment = (n > 0 && pvSeed > 0) ? Math.abs(pmt(rateSeed, n, pvSeed, balloonFVSeed)) : 0;
-    }
-    const dtiSeed = inc > 0 ? (placeholderPayment + exp + oth) / inc : 1;
-
-    // APR selection (auto derives only on click)
-    const scoreSeed = autoScore ? (res?.scoreAuto ?? undefined) : toNum(creditScoreManual);
-    let aprUsed = autoApr || !toNum(apr)
-      ? deriveApr(loanType, dtiSeed, scoreSeed)
-      : clamp(toNum(apr), 0, 100);
-
-    if (enforceCap) aprUsed = Math.min(aprUsed, NCA_MAX_RATE);
-    const monthlyRate = aprUsed / 100 / 12;
-
-    // Mirror derived APR into the input only after Calculate
-    if (autoApr) setApr(aprUsed.toFixed(2));
-
-    // Save explanation chip
-    try {
-      setLastAprExplain({
-        source: (autoApr || !toNum(apr)) ? "auto" : "manual",
-        dti: dtiSeed,
-        score: scoreSeed,
-        capped: enforceCap && aprUsed === NCA_MAX_RATE,
-        value: Math.round(aprUsed * 100) / 100
-      });
-    } catch {}
-
-    // ==== CREDIT CARD LOGIC ====
-    if (loanType === "credit_card") {
-      const minPct = toNum(ccMinPct) / 100;
-      const minRand = toNum(ccMinRand);
-      const fee = toNum(ccFee);
-      const limit = toNum(ccTotalLimit) || 0;
-
-      if (amt <= 0 || monthlyRate < 0) { setRes(null); return; }
-
-      if (ccMinOnly) {
-        let firstMonthPay = 0, avgPay = 0, months = 0;
-        let totalInt = 0, totalFee = 0, negAm = false, totalPaidCore = 0;
-        let bal = amt;
-        const capMonths = 600;
-
-        while (bal > 0.01 && months < capMonths) {
-          const interest = bal * monthlyRate;
-          const minDueCore = Math.max(minRand, bal * minPct);
-          const outflow = minDueCore + fee;
-          if (months === 0) firstMonthPay = outflow;
-
-          const principal = minDueCore - interest;
-          if (principal <= 0) { negAm = true; break; }
-
-          bal = Math.max(0, bal - principal);
-          totalInt += interest;
-          totalFee += fee;
-          totalPaidCore += minDueCore;
-          months++;
-          avgPay += outflow;
-        }
-        if (months > 0) avgPay = avgPay / months;
-
-        const totalRepay = round2(totalPaidCore + totalFee);
-        const dti = inc > 0 ? (firstMonthPay + exp + oth) / inc : 1;
-
-        const util = limit > 0 ? amt / limit : undefined;
-        const auto = estimateScore(dti, aprUsed, util);
-
-        let bucket: Result["approval"]["bucket"] = "Low";
-        let chance = 10;
-        if (dti <= 0.3) { bucket = "High"; chance = 85; }
-        else if (dti <= 0.4) { bucket = "Moderate"; chance = 60; }
-        else if (dti <= 0.5) { bucket = "Caution"; chance = 35; }
-        if (auto >= 700) chance += 5; else if (auto <= 550) chance -= 5;
-        chance = clamp(chance, 5, 95);
-
-        let aff = "";
-        if (inc <= 0) aff = "Enter monthly income to evaluate affordability.";
-        else if (dti <= 0.3) aff = "Healthy: low DTI; strong affordability.";
-        else if (dti <= 0.4) aff = "Moderate: manageable DTI; likely acceptable.";
-        else if (dti <= 0.5) aff = "Caution: high DTI; approval may require better terms.";
-        else aff = "High risk: DTI above 50%; likely to be declined.";
-
-        setRes({
-          product: "credit_card",
-          rateUsed: round2(aprUsed),
-          monthlyRate,
-          financedPV: amt,
-          balloonFV: 0,
-          payment: round2(firstMonthPay - fee),
-          firstMonthOutflow: round2(firstMonthPay),
-          avgMonthlyOutflow: round2(avgPay),
-          totalInterest: round2(totalInt),
-          totalFees: round2(totalFee),
-          totalRepayable: round2(totalRepay),
-          dti,
-          affordabilityNote: aff,
-          approval: { bucket, chancePct: chance, reason: `DTI ${(dti*100).toFixed(1)}%; APR ${round2(aprUsed)}%` },
-          scoreAuto: auto,
-          monthsToClear: negAm ? undefined : months,
-          negAmWarning: negAm
-        });
-        setDirty(false);
-        return;
-      } else {
-        if (n <= 0) { setRes(null); return; }
-        const paymentCore = Math.abs(pmt(monthlyRate, n, amt, 0));
-        const totalRepayCore = paymentCore * n;
-        const totalInt = totalRepayCore - amt;
-        const totalFee = fee * n;
-        const dti = inc > 0 ? (paymentCore + fee + exp + oth) / inc : 1;
-
-        const util = limit > 0 ? amt / limit : undefined;
-        const auto = estimateScore(dti, aprUsed, util);
-
-        let bucket: Result["approval"]["bucket"] = "Low";
-        let chance = 10;
-        if (dti <= 0.3) { bucket = "High"; chance = 85; }
-        else if (dti <= 0.4) { bucket = "Moderate"; chance = 60; }
-        else if (dti <= 0.5) { bucket = "Caution"; chance = 35; }
-        if (auto >= 700) chance += 5; else if (auto <= 550) chance -= 5;
-        chance = clamp(chance, 5, 95);
-
-        let aff = "";
-        if (inc <= 0) aff = "Enter monthly income to evaluate affordability.";
-        else if (dti <= 0.3) aff = "Healthy: low DTI; strong affordability.";
-        else if (dti <= 0.4) aff = "Moderate: manageable DTI; likely acceptable.";
-        else if (dti <= 0.5) aff = "Caution: high DTI; approval may require better terms.";
-        else aff = "High risk: DTI above 50%; likely to be declined.";
-
-        setRes({
-          product: "credit_card",
-          rateUsed: round2(aprUsed),
-          monthlyRate,
-          financedPV: amt,
-          balloonFV: 0,
-          payment: round2(paymentCore),
-          firstMonthOutflow: round2(paymentCore + fee),
-          totalInterest: round2(totalInt),
-          totalFees: round2(totalFee),
-          totalRepayable: round2(totalRepayCore + totalFee),
-          dti,
-          affordabilityNote: aff,
-          approval: { bucket, chancePct: chance, reason: `DTI ${(dti*100).toFixed(1)}%; APR ${round2(aprUsed)}%` },
-          scoreAuto: auto,
-          monthsToClear: n
-        });
-        setDirty(false);
-        return;
+    // Vehicle policy clamps
+    let balloonPct = f.balloonPct;
+    if (f.loanType === "Vehicle Finance") {
+      const maxPct = (caps.vehicle.policy?.maxBalloonPct ?? 0.4) * 100;
+      if (balloonPct > maxPct) {
+        balloonPct = maxPct;
+        notes.push(`Balloon capped to ${maxPct}% by policy`);
       }
+      const maxTerm = caps.vehicle.policy?.maxTermMonths ?? 72;
+      if (f.term > maxTerm) notes.push(`Term exceeds ${maxTerm} months policy`);
     }
 
-    // ==== INSTALMENT LOANS (personal/vehicle/home) ====
-    const monthlyBalloonPct = loanType === "vehicle" ? clamp(toNum(balloonPct), 0, limits?.balloonMax ?? 0) : 0;
-    const balloonFV = loanType === "vehicle" ? (toNum(amount) * monthlyBalloonPct / 100) : 0;
-    const financedPV = Math.max(0, amt - (limits?.showDeposit ? Math.max(0, dep) : 0));
+    // MEN fallback
+    const men = minExpenseNorm(f.gross, f.dependants);
+    const usedExpenses = Math.max(f.declaredExpenses, men);
+    if (usedExpenses > f.declaredExpenses) notes.push("MEN applied (declared expenses below norms)");
 
-    if (financedPV <= 0 || n <= 0) {
-      setRes(null);
-      return;
+    // Other-balance min
+    const minFromBalance = f.applyMinPctFromBalance ? f.owedBalance * DEFAULT_MIN_PCT : 0;
+
+    // Service fee (capped)
+    const serviceFee = serviceFeeMonthly(f.requestedServiceFee);
+
+    // Score -> APR -> cap
+    const scoreAdj = Math.max(300, Math.min(900, f.creditScore + employmentScoreAdj(f.employmentType)));
+    const aprCandidatePct = f.autoAPR ? aprFromScore(scoreAdj) : f.aprPercent;
+    const capAPRdec = getCapAPRByLoanType(f.loanType, f.repoPct);
+    const aprPctFinal = Math.min(aprCandidatePct, capAPRdec * 100);
+    const r = monthlyRate(aprPctFinal / 100);
+
+    // Initiation fee
+    const initFee = initiationFee(f.loanType as any, f.amount);
+    const initFinanced = FINANCE_INIT_FEE && initFee > 0;
+
+    // Principal by type
+    let financed = f.amount + (initFinanced ? initFee : 0);
+    let balloonAmount = 0;
+
+    if (f.loanType === "Home Loan") {
+      financed = Math.max(0, f.amount - Math.max(0, f.depositAmount)) + (initFinanced ? initFee : 0);
+    } else if (f.loanType === "Vehicle Finance") {
+      const deposit = Math.max(0, f.depositAmount);
+      const priceAfterDeposit = Math.max(0, f.amount - deposit);
+      balloonAmount = priceAfterDeposit * Math.max(0, balloonPct) / 100;
+      const pvBalloon = balloonAmount / Math.pow(1 + r, f.term);
+      financed = Math.max(0, priceAfterDeposit - pvBalloon) + (initFinanced ? initFee : 0);
     }
 
-    const payment = Math.abs(pmt(monthlyRate, n, financedPV, balloonFV));
-    const totalRepay = round2(payment * n + balloonFV);
-    const totalInterest = round2(totalRepay - financedPV);
-    const dti = inc > 0 ? (payment + exp + oth) / inc : 1;
+    // Repayments
+    const basePMT = pmt(financed, r, f.term);
+    const monthly = basePMT + serviceFee;
 
-    const auto = estimateScore(dti, aprUsed);
+    // Totals (balloon added at end if vehicle; deposit excluded by design)
+    const totalServiceFees = serviceFee * f.term;
+    const totalRepay = monthly * f.term + (f.loanType === "Vehicle Finance" ? balloonAmount : 0);
+    const totalInterestApprox = totalRepay - totalServiceFees - f.amount - (initFinanced ? initFee : 0);
 
-    let bucket: Result["approval"]["bucket"] = "Low";
-    let chance = 10;
-    if (dti <= 0.3) { bucket = "High"; chance = 85; }
-    else if (dti <= 0.4) { bucket = "Moderate"; chance = 60; }
-    else if (dti <= 0.5) { bucket = "Caution"; chance = 35; }
-    if (auto >= 700) chance += 5; else if (auto <= 550) chance -= 5;
-    chance = clamp(chance, 5, 95);
+    // Affordability
+    const existingFinal = f.existingMonthlyDebts + minFromBalance;
+    const disposable = diNetOnly(f.net, usedExpenses, existingFinal);
+    const affordable = monthly <= disposable;
 
-    let aff = "";
-    if (inc <= 0) aff = "Enter monthly income to evaluate affordability.";
-    else if (dti <= 0.3) aff = "Healthy: low DTI; strong affordability.";
-    else if (dti <= 0.4) aff = "Moderate: manageable DTI; likely acceptable.";
-    else if (dti <= 0.5) aff = "Caution: high DTI; approval may require better terms.";
-    else aff = "High risk: DTI above 50%; likely to be declined.";
+    const dti = dtiAfter(f.gross, existingFinal, monthly);
+    const dtiBand = dti < 0.35 ? "Low" : dti < 0.5 ? "Moderate" : "High";
 
-    setRes({
-      product: loanType,
-      rateUsed: round2(aprUsed),
-      monthlyRate,
-      financedPV,
-      balloonFV,
-      payment: round2(payment),
-      firstMonthOutflow: round2(payment),
-      totalInterest,
-      totalFees: 0,
-      totalRepayable: totalRepay,
+    // Age/term
+    const endAge = f.ageYears + f.term / 12;
+    const termWithinAge = endAge <= MAX_END_AGE;
+    if (!termWithinAge) notes.push(`Term ends at age ${endAge.toFixed(1)} (> ${MAX_END_AGE})`);
+
+    // Decision
+    const decision = !affordable
+      ? "Declined – fails affordability"
+      : dti >= 0.55
+      ? "Declined – DTI too high"
+      : "Approved / Borderline";
+
+    return {
+      ...f,
+      scoreAdj,
+      aprPctFinal,
+      r,
+      initFee,
+      initFinanced,
+      financed,
+      balloonAmount,
+      basePMT,
+      monthly,
+      totalServiceFees,
+      totalRepay,
+      totalInterestApprox,
+      usedExpenses,
+      minFromBalance,
+      existingFinal,
+      disposable,
       dti,
-      affordabilityNote: aff,
-      approval: { bucket, chancePct: chance, reason: `DTI ${(dti*100).toFixed(1)}%; APR ${round2(aprUsed)}%${enforceCap && aprUsed===NCA_MAX_RATE ? " (capped)" : ""}` },
-      scoreAuto: auto
+      dtiBand,
+      endAge,
+      termWithinAge,
+      decision,
+      notes,
+    };
+  }
+
+  function onCalculate() {
+    setResults(compute());
+  }
+  function onClear() {
+    setResults(null);
+  }
+
+  async function onPDF() {
+    if (!results) return alert("Calculate first.");
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const w = doc.internal.pageSize.getWidth();
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+    doc.text(`Scend – ${results.loanType} Results`, w/2, 56, { align: "center" });
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, w/2, 72, { align: "center" });
+
+    autoTable(doc, {
+      startY: 96,
+      styles: { fontSize: 10, cellPadding: 6, halign: "left" },
+      head: [["Result", "Value"]],
+      body: [
+        ["APR (capped)", `${results.aprPctFinal.toFixed(2)}%`],
+        ["Service fee (applied)", currency(results.requestedServiceFee)],
+        ["Initiation fee", currency(results.initFee) + (results.initFinanced ? " (financed)" : " (upfront)")],
+        ["Base instalment (excl. service)", currency(results.basePMT)],
+        ["Monthly instalment", currency(results.monthly)],
+        ...(results.loanType === "Vehicle Finance"
+          ? [
+              ["Deposit (applied)", currency(Math.max(0, results.depositAmount))],
+              ["Balloon (end of term)", currency(results.balloonAmount)],
+            ]
+          : results.loanType === "Home Loan"
+          ? [["Deposit (applied)", currency(Math.max(0, results.depositAmount))]]
+          : []),
+        ["Total interest (approx)", currency(results.totalInterestApprox)],
+        ["Total service fees", currency(results.totalServiceFees)],
+        ["Total repayment" + (results.loanType === "Vehicle Finance" ? " (incl. balloon)" : ""), currency(results.totalRepay)],
+        ["Expenses used (MEN fallback)", currency(results.usedExpenses)],
+        ["Assumed min from other balance", currency(results.minFromBalance)],
+        ["Existing debts (final)", currency(results.existingFinal)],
+        ["Disposable income", currency(results.disposable)],
+        ["DTI (post-loan)", `${(results.dti*100).toFixed(1)}% (${results.dtiBand})`],
+        ["Term end age", `${results.endAge.toFixed(1)} yrs`],
+        ["Decision", results.decision],
+        ...(results.notes?.length ? results.notes.map((n: string)=>["Policy note", n]) : []),
+      ],
+      theme: "striped",
+      headStyles: { fillColor: [219, 39, 119] },
     });
-    setDirty(false);
+
+    // Disclaimer
+    const y = (doc as any).lastAutoTable.finalY + 24;
+    doc.setFont("helvetica","italic"); doc.setFontSize(9);
+    doc.text(
+      "Disclaimer: Educational estimate only. Not financial advice. Subject to the National Credit Act (NCA), bank policies,\n" +
+      "supporting documents and credit checks. Results may differ from a lender's assessment. Scend Pty Ltd does not store\n" +
+      "personal data unless you explicitly send results via email.", 56, y
+    );
+
+    doc.save(`Scend_${results.loanType.replace(/\s+/g,"")}_Results.pdf`);
   }
 
-  function clearAll() {
-    setLoanType("personal");
-    setAmount("");
-    setDeposit("");
-    setBalloonPct("");
-    setTermMonths(60);
-    setApr("");
-    setEnforceCap(true);
-    setIncome("");
-    setExpenses("");
-    setOtherDebt("");
-    setAutoScore(true);
-    setCreditScoreManual("");
-
-    setCcMinPct(3);
-    setCcMinRand(25);
-    setCcFee(69);
-    setCcMinOnly(true);
-    setCcTotalLimit("");
-
-    setRes(null);
-    setDirty(false);
-  }
-
-  // Share helpers
-  function shareSummary() {
-    if (!res) return "Scend Loan result: Enter inputs and click Calculate.";
-    const base = [
-      `Scend Loan — ${res.product.toUpperCase()} (${res.rateUsed}% APR${enforceCap && res.rateUsed===NCA_MAX_RATE ? " capped" : ""})`,
-      `Payment: ${fmtMoney(res.firstMonthOutflow)}/mo`,
-      `Total repayable: ${fmtMoney(res.totalRepayable)}`,
-      `DTI: ${(res.dti*100).toFixed(1)}% (${res.approval.bucket} ${res.approval.chancePct}%)`
-    ];
-    if (res.product === "credit_card" && res.monthsToClear) base.push(`Months to clear: ${res.monthsToClear}`);
-    return base.join(" • ");
-  }
-  function waShare() {
-    const text = encodeURIComponent(shareSummary() + " — " + (typeof window !== "undefined" ? window.location.href : ""));
-    window.open(`https://wa.me/?text=${text}`, "_blank");
-  }
-  function emailShare() {
-    const subject = encodeURIComponent("Scend Loan result");
-    const body = encodeURIComponent(shareSummary() + "\n\n" + (typeof window !== "undefined" ? window.location.href : ""));
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  }
-  async function copyShare() {
-    try { await navigator.clipboard.writeText(shareSummary() + " — " + (typeof window !== "undefined" ? window.location.href : "")); alert("Copied to clipboard"); }
-    catch { alert("Copy failed"); }
-  }
-
-  function exportPDF() {
-    if (!res) return;
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text("Scend — Loan Calculation", 14, 16);
-    doc.setFontSize(10);
-    doc.text(`Type: ${res.product}`, 14, 23);
-
-    const rows: any[] = [
-      ["APR", `${res.rateUsed}%${enforceCap && res.rateUsed===NCA_MAX_RATE ? " (capped)" : ""}`],
-      ["Monthly rate", `${round2(res.monthlyRate*100)}%`],
-      ["Financed PV / Balance", fmtMoney(res.financedPV)],
-      ["Balloon (FV at end)", fmtMoney(res.balloonFV)],
-      ["Monthly payment (first month outflow)", fmtMoney(res.firstMonthOutflow)],
-      ["Total interest", fmtMoney(res.totalInterest)],
-      ["Total service fees", fmtMoney(res.totalFees)],
-      ["Total repayable", fmtMoney(res.totalRepayable)],
-      ["DTI", `${(res.dti*100).toFixed(1)}%`],
-      ["Approval likelihood", `${res.approval.bucket} (${res.approval.chancePct}%) — ${res.approval.reason}`]
-    ];
-    if (res.product === "credit_card") {
-      if (res.avgMonthlyOutflow) rows.splice(4, 0, ["Average monthly outflow (min-mode)", fmtMoney(res.avgMonthlyOutflow)]);
-      if (res.monthsToClear) rows.push(["Months to clear (estimate)", String(res.monthsToClear)]);
-      if (res.negAmWarning) rows.push(["Warning", "Negative amortization: minimum does not cover interest + fee."]);
-    }
-
-    autoTable(doc, { startY: 30, head: [["Field","Value"]], body: rows, styles: { fontSize: 10 }, theme: "grid", margin: { left: 14, right: 14 } });
-
-    const disclaimer = "Indicative only — not an offer of credit. APR guarded to ≤27.75% for NCA safety. Credit score is an internal estimate using DTI/APR/utilization; lenders will differ.";
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const footerY = doc.internal.pageSize.getHeight() - 12;
-    doc.setFontSize(8);
-    doc.text(disclaimer, 14, footerY, { maxWidth: pageWidth - 28 });
-
-    doc.save("Scend_Loan_Result.pdf");
-  }
-
-  // UI
+  /* ───────────────── UI ───────────────── */
   return (
-    <section className="mx-auto max-w-5xl p-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Loan Tool</h1>
-          <p className="text-sm text-gray-600">Branded, compliant estimates with affordability, DTI & approval likelihood. Manual <b>Calculate</b> trigger.</p>
+    <div className="space-y-8">
+      {/* Premium header */}
+      <section className="rounded-3xl bg-gradient-to-br from-pink-50 via-white to-white p-8 shadow-sm ring-1 ring-gray-200/60">
+        <div className="max-w-3xl">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">Scend Loan Tool</h1>
+          <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
+            Compliant calculations with MEN fallback, APR & fee caps, deposit/balloon handling, and repo-linked mortgage caps.
+          </p>
         </div>
-      </div>
+      </section>
 
-      <Card title="Inputs" footer={
-        <div className="flex flex-wrap gap-2">
-          <button className="rounded-xl px-4 py-2 bg-pink-600 text-white hover:opacity-90" onClick={compute}>Calculate</button>
-          <button className="rounded-xl px-4 py-2 border" onClick={clearAll}>Clear</button>
-          <button className="rounded-xl px-4 py-2 border" onClick={exportPDF} disabled={!res}>Export PDF</button>
-          {dirty && <span className="text-xs text-amber-600 self-center">Values changed — click <b>Calculate</b>.</span>}
+      {/* Main grid */}
+      <section className="grid gap-6 md:grid-cols-2">
+        {/* Form card */}
+        <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-gray-200/70">
+          <h2 className="text-lg font-semibold text-gray-900">Application details</h2>
+
+          <div className="mt-5 grid gap-4">
+            {/* Loan type, Amount, Term */}
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="text-[15px] text-gray-900 md:col-span-1">
+                Loan type
+                <select
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.loanType}
+                  onChange={e=>setF(v=>({...v, loanType: e.target.value as any}))}
+                >
+                  {LOAN_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+              <label className="text-[15px] text-gray-900">
+                Amount / Price (R)
+                <input type="number" min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.amount} onChange={e=>setF(v=>({...v, amount: Number(e.target.value)}))}
+                />
+              </label>
+              <label className="text-[15px] text-gray-900">
+                Term (months)
+                <input type="number" min={1}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.term} onChange={e=>setF(v=>({...v, term: Number(e.target.value)}))}
+                />
+              </label>
+            </div>
+
+            {/* Mortgage repo */}
+            {f.loanType === "Home Loan" && (
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="text-[15px] text-gray-900">
+                  Current repo rate (%)
+                  <input type="number" step="0.01" min={0}
+                    className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                    value={f.repoPct} onChange={e=>setF(v=>({...v, repoPct: Number(e.target.value)}))}
+                  />
+                </label>
+              </div>
+            )}
+
+            {/* Type-specific */}
+            {f.loanType === "Home Loan" && (
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="text-[15px] text-gray-900">
+                  Deposit (R)
+                  <input type="number" min={0}
+                    className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                    value={f.depositAmount} onChange={e=>setF(v=>({...v, depositAmount: Number(e.target.value)}))}
+                  />
+                </label>
+              </div>
+            )}
+
+            {f.loanType === "Vehicle Finance" && (
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="text-[15px] text-gray-900">
+                  Deposit (R)
+                  <input type="number" min={0}
+                    className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                    value={f.depositAmount} onChange={e=>setF(v=>({...v, depositAmount: Number(e.target.value)}))}
+                  />
+                </label>
+                <label className="text-[15px] text-gray-900">
+                  Balloon (%)
+                  <input type="number" min={0} max={(caps.vehicle.policy?.maxBalloonPct ?? 0.4)*100} step={1}
+                    className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                    value={f.balloonPct} onChange={e=>setF(v=>({...v, balloonPct: Number(e.target.value)}))}
+                  />
+                </label>
+              </div>
+            )}
+
+            {/* APR + Auto */}
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="md:col-span-2 text-[15px] text-gray-900">
+                Proposed APR (%)
+                <input type="number" step="0.01" min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.aprPercent} onChange={e=>setF(v=>({...v, aprPercent: Number(e.target.value)}))}
+                  disabled={f.autoAPR}
+                />
+                <span className="mt-1 block text-[12px] text-gray-700">
+                  Cap for {f.loanType}: {(getCapAPRByLoanType(f.loanType, f.repoPct)*100).toFixed(2)}%
+                </span>
+              </label>
+              <label className="flex items-end gap-2 text-[15px] text-gray-900">
+                <input type="checkbox" className="h-4 w-4"
+                  checked={f.autoAPR} onChange={e=>setF(v=>({...v, autoAPR: e.target.checked}))}
+                />
+                <span>Auto APR</span>
+              </label>
+            </div>
+
+            {/* Score + Employment + Age */}
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="text-[15px] text-gray-900">
+                Credit score
+                <input type="number" min={300} max={900}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.creditScore} onChange={e=>setF(v=>({...v, creditScore: Number(e.target.value)}))}
+                />
+              </label>
+              <label className="text-[15px] text-gray-900">
+                Employment type
+                <select
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.employmentType}
+                  onChange={e=>setF(v=>({...v, employmentType: e.target.value}))}
+                >
+                  {EMPLOYMENT_TYPES.map(t => <option key={t}>{t}</option>)}
+                </select>
+              </label>
+              <label className="text-[15px] text-gray-900">
+                Age (years)
+                <input type="number" min={18} max={90}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.ageYears} onChange={e=>setF(v=>({...v, ageYears: Number(e.target.value)}))}
+                />
+                <span className="mt-1 block text-[12px] text-gray-700">Term should end ≤ age {MAX_END_AGE}.</span>
+              </label>
+            </div>
+
+            {/* Income / Debts */}
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="text-[15px] text-gray-900">
+                Gross income (R)
+                <input type="number" min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.gross} onChange={e=>setF(v=>({...v, gross: Number(e.target.value)}))}
+                />
+              </label>
+              <label className="text-[15px] text-gray-900">
+                Net income (R)
+                <input type="number" min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.net} onChange={e=>setF(v=>({...v, net: Number(e.target.value)}))}
+                />
+              </label>
+              <label className="text-[15px] text-gray-900">
+                Existing monthly debts (R)
+                <input type="number" min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.existingMonthlyDebts} onChange={e=>setF(v=>({...v, existingMonthlyDebts: Number(e.target.value)}))}
+                />
+              </label>
+            </div>
+
+            {/* Expenses / owed */}
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="text-[15px] text-gray-900">
+                Declared monthly living expenses (R)
+                <input type="number" min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.declaredExpenses} onChange={e=>setF(v=>({...v, declaredExpenses: Number(e.target.value)}))}
+                />
+              </label>
+              <label className="text-[15px] text-gray-900">
+                Current owed balance (R)
+                <input type="number" min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.owedBalance} onChange={e=>setF(v=>({...v, owedBalance: Number(e.target.value)}))}
+                />
+              </label>
+              <label className="flex items-end gap-2 text-[15px] text-gray-900">
+                <input type="checkbox" className="h-4 w-4"
+                  checked={f.applyMinPctFromBalance}
+                  onChange={e=>setF(v=>({...v, applyMinPctFromBalance: e.target.checked}))}
+                />
+                <span>Apply assumed min from balance ({Math.round(DEFAULT_MIN_PCT*100)}%)</span>
+              </label>
+            </div>
+
+            {/* Service fee */}
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-[15px] text-gray-900">
+                Service fee (monthly, R)
+                <input type="number" min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.requestedServiceFee} onChange={e=>setF(v=>({...v, requestedServiceFee: Number(e.target.value)}))}
+                />
+                <span className="mt-1 block text-[12px] text-gray-700">Clamped to cap automatically</span>
+              </label>
+            </div>
+
+            {/* Buttons (only Calculate, Clear, Export) */}
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                onClick={onCalculate}
+                className="glow rounded-2xl bg-pink-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-700"
+              >
+                Calculate
+              </button>
+              <button
+                onClick={onClear}
+                className="rounded-2xl px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-100"
+              >
+                Clear
+              </button>
+              <button
+                onClick={onPDF}
+                className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 hover:bg-gray-100"
+              >
+                Export PDF (Results only)
+              </button>
+            </div>
+          </div>
         </div>
-      }>
-        <div className="grid gap-4">
-          <Field label="Loan type">
-            <select className="border rounded-lg px-3 py-2 w-full" value={loanType} onChange={e=>markDirty(setLoanType)(e.target.value as LoanType)}>
-              <option value="personal">Personal</option>
-              <option value="vehicle">Vehicle</option>
-              <option value="home">Home</option>
-              <option value="credit_card">Credit card</option>
-            </select>
-          </Field>
 
-          <Field label={limits?.labelAmount ?? "Amount (R)"} hint={loanType==="personal" ? "Personal: amount required." : (loanType==="credit_card" ? "Outstanding revolving balance you want to clear." : "Asset price.")}>
-            <input type="number" min={0} className="border rounded-lg px-3 py-2 w-56"
-              value={amount} onChange={e=>markDirty(setAmount)(e.target.value===""? "": toNum(e.target.value))} />
-          </Field>
+        {/* Results card */}
+        <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-gray-200/70">
+          <h2 className="text-lg font-semibold text-gray-900">Results</h2>
 
-          {limits?.showDeposit && (
-            <Field label="Deposit (R)">
-              <input type="number" min={0} className="border rounded-lg px-3 py-2 w-56"
-                value={deposit} onChange={e=>markDirty(setDeposit)(e.target.value===""? "": toNum(e.target.value))} />
-            </Field>
+          {!results ? (
+            <div className="mt-4 text-[15px] text-gray-700">
+              Enter details and click <strong>Calculate</strong> to see results.
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-2 text-[15px]">
+              <div className="flex items-center justify-between"><span>APR (capped)</span><span>{results.aprPctFinal.toFixed(2)}%</span></div>
+              <div className="flex items-center justify-between"><span>Service fee (applied)</span><span>{currency(results.requestedServiceFee)}</span></div>
+              <div className="flex items-center justify-between"><span>Initiation fee</span><span>{currency(results.initFee)} {results.initFinanced ? "(financed)" : "(upfront)"}</span></div>
+              <div className="flex items-center justify-between"><span>Base instalment (excl. service)</span><span>{currency(results.basePMT)}</span></div>
+              <div className="flex items-center justify-between font-semibold"><span>Monthly instalment</span><span>{currency(results.monthly)}</span></div>
+
+              {results.loanType === "Vehicle Finance" && (
+                <>
+                  <div className="flex items-center justify-between"><span>Deposit (applied)</span><span>{currency(Math.max(0, results.depositAmount))}</span></div>
+                  <div className="flex items-center justify-between"><span>Balloon (end of term)</span><span>{currency(results.balloonAmount)}</span></div>
+                  <div className="text-[12px] text-gray-700">Instalment excludes balloon. Balloon due at end of term.</div>
+                </>
+              )}
+              {results.loanType === "Home Loan" && (
+                <div className="flex items-center justify-between"><span>Deposit (applied)</span><span>{currency(Math.max(0, results.depositAmount))}</span></div>
+              )}
+
+              <div className="mt-2 grid gap-2 rounded-xl bg-gray-50 px-3 py-2">
+                <div className="flex items-center justify-between"><span>Total interest (approx)</span><span>{currency(results.totalInterestApprox)}</span></div>
+                <div className="flex items-center justify-between"><span>Total service fees</span><span>{currency(results.totalServiceFees)}</span></div>
+                <div className="flex items-center justify-between font-semibold">
+                  <span>Total repayment{results.loanType === "Vehicle Finance" ? " (incl. balloon)" : ""}</span>
+                  <span>{currency(results.totalRepay)}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between"><span>Expenses used (MEN fallback)</span><span>{currency(results.usedExpenses)}</span></div>
+              <div className="flex items-center justify-between"><span>Assumed min from other balance</span><span>{currency(results.minFromBalance)}</span></div>
+              <div className="flex items-center justify-between"><span>Existing debts (final)</span><span>{currency(results.existingFinal)}</span></div>
+
+              <div className="mt-3 rounded-xl bg-gray-50 px-3 py-2">
+                <div className="text-[13px] text-gray-700 font-medium mb-1">Affordability snapshot</div>
+                <div className="grid gap-1 text-[13px] text-gray-700">
+                  <div className="flex items-center justify-between"><span>Net income</span><span>{currency(results.disposable + results.existingFinal + results.usedExpenses)}</span></div>
+                  <div className="flex items-center justify-between"><span>Expenses & debts used</span><span>included</span></div>
+                  <div className="flex items-center justify-between font-semibold"><span>Disposable</span><span>{currency(results.disposable)}</span></div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between"><span>DTI (post-loan)</span><span>{(results.dti*100).toFixed(1)}% <em className="text-[13px] text-gray-700">({results.dtiBand})</em></span></div>
+              <div className="flex items-center justify-between"><span>Term end age</span><span>{results.endAge.toFixed(1)} yrs</span></div>
+
+              {results.notes?.length > 0 && (
+                <div className="mt-2 rounded-xl bg-pink-50/70 px-3 py-2 text-[14px]">
+                  <div className="font-semibold mb-1">Policy notes</div>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {results.notes.map((n: string, i: number) => <li key={i}>{n}</li>)}
+                  </ul>
+                </div>
+              )}
+
+              <div className="mt-3 rounded-xl bg-pink-50/70 px-3 py-2 text-[15px]">
+                <strong>Decision: </strong>{results.decision}
+              </div>
+            </div>
           )}
 
-          {limits?.allowBalloon && (
-            <Field label="Balloon (%)" hint="Common for vehicles. Capped at 40%.">
-              <input type="number" min={0} max={limits?.balloonMax ?? 0} className="border rounded-lg px-3 py-2 w-28"
-                value={balloonPct} onChange={e=>markDirty(setBalloonPct)(e.target.value===""? "": toNum(e.target.value))} />
-            </Field>
-          )}
-
-          {/* Term */}
-          <Field label={loanType==="credit_card" && !ccMinOnly ? "Target months to clear" : "Term (months)"}>
-            <input type="number" min={limits?.min ?? 1} max={limits?.max ?? 360} className="border rounded-lg px-3 py-2 w-28"
-              value={termMonths} onChange={e=>markDirty(setTermMonths)(e.target.value===""? "": toNum(e.target.value))} disabled={loanType==="credit_card" && ccMinOnly} />
-          </Field>
-
-          {/* APR */}
-          <div className="mt-2 mb-1">
-            <label className="inline-flex items-center gap-2">
-              <input
-                type="checkbox"
-                className="h-4 w-4"
-                checked={autoApr}
-                onChange={e => { setAutoApr(e.target.checked); setDirty(true); }}
-              />
-              <span className="text-sm">Auto-calculate interest (APR)</span>
-            </label>
-            <p className="text-xs opacity-70">
-              {autoApr
-                ? `APR will be auto-derived and capped ≤ ${NCA_MAX_APR}% when you click Calculate.`
-                : "Enter APR manually, e.g. 11.49."}
+          {/* Disclaimer */}
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-white/60 p-4">
+            <p className="text-[12.5px] leading-relaxed text-gray-700">
+              <strong>Disclaimer:</strong> This tool provides an educational estimate only. It is not financial advice.
+              All outcomes remain subject to the National Credit Act (NCA), lender policies, supporting documents,
+              affordability assessments and credit checks. Actual results may differ from a lender’s assessment.
+              Scend Pty Ltd does not store your personal data unless you explicitly choose to send your results via email.
             </p>
           </div>
-          <Field label="Interest rate (APR, %)" hint={`Guarded by NCA ≤ ${NCA_MAX_APR}%`}>
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                inputMode="decimal"
-                className="border rounded-lg px-3 py-2 w-28 disabled:bg-gray-100"
-                value={
-                  autoApr
-                    ? (typeof res?.rateUsed === "number" ? res.rateUsed.toFixed(2) : "")
-                    : (typeof apr === "number" ? apr.toString() : (apr ?? ""))
-                }
-                onChange={e => markDirty(setApr)(e.target.value)}
-                disabled={autoApr}
-                placeholder={autoApr ? "(auto after Calculate)" : "e.g. 11.49 or 11,49"}
-                aria-label="APR"
-              />
-            </div>
-          </Field>
-
-          {/* Income & debts for DTI */}
-          <Field label="Monthly income (R)">
-            <input type="number" min={0} className="border rounded-lg px-3 py-2 w-56"
-              value={income} onChange={e=>markDirty(setIncome)(e.target.value===""? "": toNum(e.target.value))} />
-          </Field>
-
-          <Field label="Monthly expenses (R)" hint="Committed living expenses (excl. this loan)">
-            <input type="number" min={0} className="border rounded-lg px-3 py-2 w-56"
-              value={expenses} onChange={e=>markDirty(setExpenses)(e.target.value===""? "": toNum(e.target.value))} />
-          </Field>
-
-          <Field label="Other debt repayments (R)" hint="Existing monthly repayments (credit cards, other loans)">
-            <input type="number" min={0} className="border rounded-lg px-3 py-2 w-56"
-              value={otherDebt} onChange={e=>markDirty(setOtherDebt)(e.target.value===""? "": toNum(e.target.value))} />
-          </Field>
-
-          {/* Credit card extras */}
-          {loanType==="credit_card" && (
-            <>
-              <Field label="Minimum payment rule">
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="inline-flex items-center gap-2">
-                    <input type="checkbox" checked={ccMinOnly} onChange={e=>markDirty(setCcMinOnly)(e.target.checked)} />
-                    <span className="text-sm">Minimum only (simulate amortization)</span>
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">% of balance</span>
-                    <input type="number" min={0} step={0.1} className="border rounded-lg px-2 py-1 w-20"
-                      value={ccMinPct} onChange={e=>markDirty(setCcMinPct)(e.target.value===""? "": toNum(e.target.value))} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Min rand</span>
-                    <input type="number" min={0} className="border rounded-lg px-2 py-1 w-24"
-                      value={ccMinRand} onChange={e=>markDirty(setCcMinRand)(e.target.value===""? "": toNum(e.target.value))} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Monthly fee</span>
-                    <input type="number" min={0} className="border rounded-lg px-2 py-1 w-24"
-                      value={ccFee} onChange={e=>markDirty(setCcFee)(e.target.value===""? "": toNum(e.target.value))} />
-                  </div>
-                </div>
-              </Field>
-
-              <Field label="Total revolving limit (optional)" hint="Used to estimate utilization (balance ÷ limits) for auto score.">
-                <input type="number" min={0} className="border rounded-lg px-3 py-2 w-56"
-                  value={ccTotalLimit} onChange={e=>markDirty(setCcTotalLimit)(e.target.value===""? "": toNum(e.target.value))} />
-              </Field>
-            </>
-          )}
         </div>
-      </Card>
-
-      <Card title="Results" footer={
-        <div className="flex flex-wrap gap-2">
-          <button className="rounded-xl px-3 py-2 border" onClick={waShare} disabled={!res}>Share WhatsApp</button>
-          <button className="rounded-xl px-3 py-2 border" onClick={emailShare} disabled={!res}>Share Email</button>
-          <button className="rounded-xl px-3 py-2 border" onClick={copyShare} disabled={!res}>Copy summary</button>
-        </div>
-      }>
-        {res ? (
-          <div className="grid gap-2">
-            <div className="flex justify-between"><span>Product</span><b>{res.product}</b></div>
-            <div className="flex justify-between"><span>Financed amount / Balance (PV)</span><b>{fmtMoney(res.financedPV)}</b></div>
-            {res.product!=="credit_card" && (
-              <div className="flex justify-between"><span>Balloon (FV at end)</span><b>{fmtMoney(res.balloonFV)}</b></div>
-            )}
-            <div className="flex justify-between"><span>APR (used)</span><b>{res.rateUsed}%</b></div>
-            <div className="flex justify-between">
-              <span>{res.product==="credit_card" ? "First month outflow" : "Monthly repayment"}</span>
-              <b>{fmtMoney(res.firstMonthOutflow)}</b>
-            </div>
-            {res.avgMonthlyOutflow !== undefined && (
-              <div className="flex justify-between">
-                <span>Average monthly outflow (min-mode)</span>
-                <b>{fmtMoney(res.avgMonthlyOutflow)}</b>
-              </div>
-            )}
-            {res.monthsToClear !== undefined && (
-              <div className="flex justify-between">
-                <span>Months to clear</span>
-                <b>{res.monthsToClear}</b>
-              </div>
-            )}
-            <div className="flex justify-between"><span>Total interest</span><b>{fmtMoney(res.totalInterest)}</b></div>
-            {res.totalFees>0 && (
-              <div className="flex justify-between"><span>Total service fees</span><b>{fmtMoney(res.totalFees)}</b></div>
-            )}
-            <div className="flex justify-between"><span>Total repayable</span><b>{fmtMoney(res.totalRepayable)}</b></div>
-            <div className="flex justify-between"><span>DTI</span><b>{(res.dti*100).toFixed(1)}%</b></div>
-            <div className="flex justify-between"><span>Approval likelihood</span><b>{res.approval.bucket} ({res.approval.chancePct}%)</b></div>
-            {res.scoreAuto !== undefined && (
-              <div className="flex justify-between">
-                <span>Auto-estimated score</span>
-                <b>{res.scoreAuto}</b>
-              </div>
-            )}
-            {res.negAmWarning && (
-              <p className="text-xs text-amber-700 mt-2">
-                Warning: Minimum payment does not cover interest + fee (negative amortization). Increase payment or lower APR.
-              </p>
-            )}
-            <p className="text-xs text-gray-500 mt-2">{res.affordabilityNote}</p>
-            {enforceCap && res.rateUsed===NCA_MAX_RATE && (
-              <p className="text-xs text-amber-600 mt-1">APR capped at {NCA_MAX_RATE}% for NCA guard.</p>
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-600">Enter inputs and click <b>Calculate</b> to see results.</p>
-        )}
-      </Card>
-    </section>
+      </section>
+    </div>
   );
 }

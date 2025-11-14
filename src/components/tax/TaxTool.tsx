@@ -1,490 +1,833 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import * as React from "react";
 
-// ---------------- Tax years ----------------
-type Bracket = { upTo: number; base: number; rate: number; excessOver: number };
-type YearConfig = {
-  label: string;
-  taxYearEnd: Date;
-  brackets: Bracket[];
-  rebates: { primary: number; secondary65: number; tertiary75: number };
-  mtc: { self: number; firstDep: number; additional: number }; // per month
-  isProvisional?: boolean;
+/* ──────────────────────────────────────────────────────────────────
+   SARS tables & helpers
+   NOTE: 2025/26 is provisional — mirrors 2024/25 until official release.
+   MTC: R364 (main+first), R246 (each additional) per month.
+   ────────────────────────────────────────────────────────────────── */
+
+type TaxBracket = { upTo: number | null; base: number; rate: number; over: number };
+type Rebates = { primary: number; secondary: number; tertiary: number };
+type MTC = { mainAndFirst: number; additional: number }; // monthly credits
+type YearKey = "2025/26" | "2024/25" | "2023/24" | "2022/23" | "2021/22";
+
+const PAYE_TABLES: Record<YearKey, { brackets: TaxBracket[]; rebates: Rebates; mtc: MTC }> = {
+  // 🚧 Provisional: mirrors 2024/25 figures until official 2025/26 are confirmed.
+  "2025/26": {
+    brackets: [
+      { upTo: 237100, base: 0, rate: 0.18, over: 0 },
+      { upTo: 370500, base: 42678, rate: 0.26, over: 237100 },
+      { upTo: 512800, base: 77362, rate: 0.31, over: 370500 },
+      { upTo: 673000, base: 121475, rate: 0.36, over: 512800 },
+      { upTo: 857900, base: 179147, rate: 0.39, over: 673000 },
+      { upTo: 1817000, base: 251258, rate: 0.41, over: 857900 },
+      { upTo: null, base: 644489, rate: 0.45, over: 1817000 },
+    ],
+    rebates: { primary: 17235, secondary: 9444, tertiary: 3145 },
+    mtc: { mainAndFirst: 364, additional: 246 },
+  },
+  "2024/25": {
+    brackets: [
+      { upTo: 237100, base: 0, rate: 0.18, over: 0 },
+      { upTo: 370500, base: 42678, rate: 0.26, over: 237100 },
+      { upTo: 512800, base: 77362, rate: 0.31, over: 370500 },
+      { upTo: 673000, base: 121475, rate: 0.36, over: 512800 },
+      { upTo: 857900, base: 179147, rate: 0.39, over: 673000 },
+      { upTo: 1817000, base: 251258, rate: 0.41, over: 857900 },
+      { upTo: null, base: 644489, rate: 0.45, over: 1817000 },
+    ],
+    rebates: { primary: 17235, secondary: 9444, tertiary: 3145 },
+    mtc: { mainAndFirst: 364, additional: 246 },
+  },
+  "2023/24": {
+    brackets: [
+      { upTo: 237100, base: 0, rate: 0.18, over: 0 },
+      { upTo: 370500, base: 42678, rate: 0.26, over: 237100 },
+      { upTo: 512800, base: 77362, rate: 0.31, over: 370500 },
+      { upTo: 673000, base: 121475, rate: 0.36, over: 512800 },
+      { upTo: 857900, base: 179147, rate: 0.39, over: 673000 },
+      { upTo: 1817000, base: 251258, rate: 0.41, over: 857900 },
+      { upTo: null, base: 644489, rate: 0.45, over: 1817000 },
+    ],
+    rebates: { primary: 17235, secondary: 9444, tertiary: 3145 },
+    mtc: { mainAndFirst: 364, additional: 246 },
+  },
+  "2022/23": {
+    brackets: [
+      { upTo: 226000, base: 0, rate: 0.18, over: 0 },
+      { upTo: 353100, base: 40680, rate: 0.26, over: 226000 },
+      { upTo: 488700, base: 73726, rate: 0.31, over: 353100 },
+      { upTo: 641400, base: 115762, rate: 0.36, over: 488700 },
+      { upTo: 817600, base: 170734, rate: 0.39, over: 641400 },
+      { upTo: 1731600, base: 239452, rate: 0.41, over: 817600 },
+      { upTo: null, base: 614192, rate: 0.45, over: 1731600 },
+    ],
+    rebates: { primary: 16425, secondary: 9000, tertiary: 2997 },
+    mtc: { mainAndFirst: 347, additional: 234 },
+  },
+  "2021/22": {
+    brackets: [
+      { upTo: 216200, base: 0, rate: 0.18, over: 0 },
+      { upTo: 337800, base: 38916, rate: 0.26, over: 216200 },
+      { upTo: 467500, base: 70532, rate: 0.31, over: 337800 },
+      { upTo: 613600, base: 110739, rate: 0.36, over: 467500 },
+      { upTo: 782200, base: 163335, rate: 0.39, over: 613600 },
+      { upTo: 1656600, base: 229089, rate: 0.41, over: 782200 },
+      { upTo: null, base: 587593, rate: 0.45, over: 1656600 },
+    ],
+    rebates: { primary: 15714, secondary: 8613, tertiary: 2871 },
+    mtc: { mainAndFirst: 332, additional: 224 },
+  },
 };
 
-const BRACKETS_2425: Bracket[] = [
-  { upTo: 237_100, base: 0, rate: 0.18, excessOver: 0 },
-  { upTo: 370_500, base: 42_678, rate: 0.26, excessOver: 237_100 },
-  { upTo: 512_800, base: 77_362, rate: 0.31, excessOver: 370_500 },
-  { upTo: 673_000, base: 121_475, rate: 0.36, excessOver: 512_800 },
-  { upTo: 857_900, base: 179_147, rate: 0.39, excessOver: 673_000 },
-  { upTo: 1_817_000, base: 251_258, rate: 0.41, excessOver: 857_900 },
-  { upTo: Number.POSITIVE_INFINITY, base: 644_489, rate: 0.45, excessOver: 1_817_000 },
+// Retirement Lump Sum (at retirement/severance)
+const RETIREMENT_LUMP_TABLE: { upTo: number | null; base: number; rate: number; over: number }[] = [
+  { upTo: 550000, base: 0, rate: 0.0, over: 0 },
+  { upTo: 770000, base: 0, rate: 0.18, over: 550000 },
+  { upTo: 1155000, base: 39600, rate: 0.27, over: 770000 },
+  { upTo: null, base: 143550, rate: 0.36, over: 1155000 },
 ];
 
-const YEARS: Record<string, YearConfig> = {
-  "2023/2024": {
-    label: "2023/2024",
-    taxYearEnd: new Date(2024, 1, 29),
-    brackets: BRACKETS_2425,
-    rebates: { primary: 17_235, secondary65: 9_444, tertiary75: 3_145 },
-    mtc: { self: 364, firstDep: 364, additional: 246 },
-  },
-  "2024/2025": {
-    label: "2024/2025",
-    taxYearEnd: new Date(2025, 1, 28),
-    brackets: BRACKETS_2425,
-    rebates: { primary: 17_235, secondary65: 9_444, tertiary75: 3_145 },
-    mtc: { self: 364, firstDep: 364, additional: 246 },
-  },
-  "2025/2026 (provisional)": {
-    label: "2025/2026 (provisional)",
-    taxYearEnd: new Date(2026, 1, 28),
-    brackets: BRACKETS_2425,
-    rebates: { primary: 17_235, secondary65: 9_444, tertiary75: 3_145 },
-    mtc: { self: 364, firstDep: 364, additional: 246 },
-    isProvisional: true,
-  },
+// Withdrawal Lump Sum (old regime)
+const WITHDRAWAL_LUMP_TABLE: { upTo: number | null; base: number; rate: number; over: number }[] = [
+  { upTo: 27500, base: 0, rate: 0.0, over: 0 },
+  { upTo: 726000, base: 0, rate: 0.18, over: 27500 },
+  { upTo: 1089000, base: 125730, rate: 0.27, over: 726000 },
+  { upTo: null, base: 223740, rate: 0.36, over: 1089000 },
+];
+
+const currency = (n: number) =>
+  (isFinite(n) ? n : 0).toLocaleString("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 2 });
+
+type YearMode = YearKey;
+type Mode = "Monthly" | "Yearly";
+
+type Inputs = {
+  year: YearMode;
+  mode: Mode;
+
+  // income
+  grossMonthly: number;
+  grossAnnual: number;
+
+  // credits/deductions
+  retirementAnnuityAnnual: number;  // annual entry (Yearly mode)
+  retirementAnnuityMonthly: number; // monthly entry (Monthly mode)
+  carAllowanceMonthly: number;      // preview 80% taxable
+  medicalDependants: number;        // excludes main member
+  age: number;                      // replaces ID
+
+  // proration
+  prorataMonths: number; // Yearly mode: 1..12
+  daysWorked: number;    // Monthly mode
+  daysInMonth: number;   // Monthly mode
+
+  // two-pot & lump sums
+  savingsWithdrawal: number; // two-pot savings → marginal
+  oldRegWithdrawal: number;  // old withdrawal table
+  retirementLumpSum: number; // retirement table
+  priorTaxableLumps: number; // cumulative (rolling)
 };
-
-// Travel/Car allowance PAYE inclusion
-const DEFAULT_CAR_ALLOWANCE_INCLUSION = 0.8;
-
-function fmt(n: number) {
-  return n.toLocaleString("en-ZA", { style: "currency", currency: "ZAR", maximumFractionDigits: 2 });
-}
-
-function normalTaxAnnual(annualTaxable: number, brackets: Bracket[]) {
-  const b = brackets.find(br => annualTaxable <= br.upTo)!;
-  return b.base + (annualTaxable - b.excessOver) * b.rate;
-}
-
-function monthlyMTC(dependants: number, mtc: YearConfig["mtc"]) {
-  if (dependants <= 0) return mtc.self;              // taxpayer only
-  const firstTwo = mtc.self + mtc.firstDep;          // taxpayer + first dependant
-  const extra = Math.max(0, dependants - 1) * mtc.additional;
-  return firstTwo + extra;
-}
-
-// --- UI helpers (cards/fields) ---
-const Card: React.FC<{ title?: string; children: React.ReactNode; footer?: React.ReactNode; className?: string }> = ({ title, children, footer, className }) => (
-  <div className={`rounded-2xl border shadow-sm bg-white ${className ?? ""}`}>
-    {title && <div className="px-5 py-4 border-b">
-      <h3 className="font-semibold">{title}</h3>
-    </div>}
-    <div className="px-5 py-4">{children}</div>
-    {footer && <div className="px-5 py-3 border-t bg-gray-50 rounded-b-2xl">{footer}</div>}
-  </div>
-);
-
-const Field: React.FC<{ label: string; children: React.ReactNode; hint?: string; right?: React.ReactNode }> = ({ label, children, hint, right }) => (
-  <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_auto] gap-3 items-center">
-    <div className="text-sm text-gray-600">{label}</div>
-    <div>{children}</div>
-    {right && <div className="justify-self-end">{right}</div>}
-    {hint && <div className="md:col-start-2 text-xs text-gray-500">{hint}</div>}
-  </div>
-);
 
 type Computed = {
-  monthlyTaxableForPAYE: number;
-  annualTaxableBeforeRA: number;
-  annualRAAllowed: number;
-  annualTaxableAfterRA: number;
-  monthlyBeforeMTC: number;
-  monthlyPAYE: number;
-  annualPAYE: number;
-  mtcPerMonth: number;
-  inclusionRate: number;
+  taxableAnnualBeforeRA: number;
+  raAllowedAnnual: number;
+  taxableAnnualAfterRA: number;
+
+  mtcAnnual: number;
+  rebatesAnnual: number;
+
+  payeAnnualBeforeCredits: number;
+  payeAnnualAfterCredits: number;
+  payeMonthly: number;
+  estNetMonthly: number;
+
+  marginalRate: number;
+  savingsWithdrawalTax: number;
+  oldRegWithdrawalTax: number;
+  retirementLumpTax: number;
+
+  prorataFactor: number;
+  notes: string[];
 };
 
+function calcPAYEAnnual(year: YearKey, taxable: number): number {
+  const { brackets } = PAYE_TABLES[year];
+  for (const b of brackets) {
+    if (b.upTo === null || taxable <= b.upTo) return b.base + (taxable - b.over) * b.rate;
+  }
+  return 0;
+}
+
+function ageRebates(year: YearKey, age: number): number {
+  const r = PAYE_TABLES[year].rebates;
+  let total = r.primary;
+  if (age >= 65) total += r.secondary;
+  if (age >= 75) total += r.tertiary;
+  return total;
+}
+
+function mtcAnnual(year: YearKey, dependants: number): number {
+  const mtc = PAYE_TABLES[year].mtc;
+  const mainPlusFirst = Math.min(dependants + 1, 2); // main + up to first dependant
+  const extra = Math.max(0, dependants + 1 - mainPlusFirst);
+  const monthly = mainPlusFirst * mtc.mainAndFirst + extra * mtc.additional;
+  return monthly * 12;
+}
+
+function taxableFromLump(
+  table: { upTo: number | null; base: number; rate: number; over: number }[],
+  amount: number,
+  priorTaxable = 0
+): number {
+  const total = Math.max(0, priorTaxable) + Math.max(0, amount);
+  const calc = (val: number) => {
+    for (const b of table) {
+      if (b.upTo === null || val <= b.upTo) return b.base + (val - b.over) * b.rate;
+    }
+    return 0;
+  };
+  const taxTotal = calc(total);
+  const taxPrior = calc(Math.max(0, priorTaxable));
+  return Math.max(0, taxTotal - taxPrior);
+}
+
+function clamp01(n: number) {
+  return Math.max(0, Math.min(1, n));
+}
+
+/* ────────────────────────────────────────────────────────────────── */
+
 export default function TaxTool() {
-  const [taxYearKey, setTaxYearKey] = useState<keyof typeof YEARS>("2024/2025");
-  const cfg = YEARS[taxYearKey];
+  const [f, setF] = React.useState<Inputs>({
+    year: "2025/26",
+    mode: "Yearly",
 
-  const [mode, setMode] = useState<"yearly" | "monthly">("monthly");
+    grossMonthly: 30000,
+    grossAnnual: 360000,
 
-  // Independent gross values
-  const [grossMonthly, setGrossMonthly] = useState<number | "">("");
-  const [grossAnnual, setGrossAnnual] = useState<number | "">("");
+    retirementAnnuityAnnual: 0,
+    retirementAnnuityMonthly: 0,
 
-  const [age, setAge] = useState<number | "">("");
-  const [medicalMember, setMedicalMember] = useState<boolean>(false);
-  const [dependants, setDependants] = useState<number>(0);
-  const [carAllowance, setCarAllowance] = useState<number | "">("");
-  const [use20pcInclusion, setUse20pcInclusion] = useState(false);
-  const [prorated, setProrated] = useState(false);
-  const [daysWorked, setDaysWorked] = useState<number | "">("");
-  const [daysInMonth, setDaysInMonth] = useState<number | "">("");
+    carAllowanceMonthly: 0,
+    medicalDependants: 0,
+    age: 35,
 
-  // Retirement contributions (monthly if mode=monthly, else annual)
-  const [retirementContribution, setRetirementContribution] = useState<number | "">("");
+    prorataMonths: 12,
+    daysWorked: 30,
+    daysInMonth: 30,
 
-  // Brand/logo
-  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/scend-logo.png");
-        if (!res.ok) return;
-        const blob = await res.blob();
-        const reader = new FileReader();
-        reader.onload = () => setLogoDataUrl(String(reader.result));
-        reader.readAsDataURL(blob);
-      } catch { /* ignore */ }
-    })();
-  }, []);
+    savingsWithdrawal: 0,
+    oldRegWithdrawal: 0,
+    retirementLumpSum: 0,
+    priorTaxableLumps: 0,
+  });
 
-  // Rebates from age (no ID captured)
-  const rebates = useMemo(() => {
-    const a = typeof age === "number" ? age : Number(age || 0);
-    let r = cfg.rebates.primary;
-    if (a >= 65) r += cfg.rebates.secondary65;
-    if (a >= 75) r += cfg.rebates.tertiary75;
-    return r;
-  }, [age, cfg]);
+  const [computed, setComputed] = React.useState<Computed | null>(null);
+  const [dirty, setDirty] = React.useState(false);
 
-  // Manual calculation only when clicking "Calculate"
-  const [computed, setComputed] = useState<Computed | null>(null);
-  const [dirty, setDirty] = useState(false);
+  // Keep monthly/annual fields in sync on mode flip (gross + RA)
+  React.useEffect(() => {
+    if (f.mode === "Monthly") {
+      setF((v) => ({
+        ...v,
+        grossAnnual: Math.max(0, (v.grossMonthly || 0) * 12),
+        retirementAnnuityMonthly: Math.max(0, Math.round((v.retirementAnnuityAnnual || 0) / 12)),
+      }));
+    } else {
+      setF((v) => ({
+        ...v,
+        grossMonthly: Math.max(0, Math.round((v.grossAnnual || 0) / 12)),
+        retirementAnnuityAnnual: Math.max(0, (v.retirementAnnuityMonthly || 0) * 12),
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f.mode]);
 
-  function computeNow() {
-    // pick gross matching mode
-    const g = Number((mode === "monthly" ? grossMonthly : grossAnnual) || 0);
-    if (!Number.isFinite(g) || g < 0) { setComputed(null); return; }
+  const markDirty =
+    <T,>(setter: React.Dispatch<React.SetStateAction<T>>) =>
+    (v: any) => {
+      setDirty(true);
+      setComputed(null);
+      setter(v);
+    };
 
-    const monthlyBase = mode === "monthly" ? g : g / 12;
-    const inclusionRate = use20pcInclusion ? 0.2 : DEFAULT_CAR_ALLOWANCE_INCLUSION;
-    const monthlyAllowanceIncludable = Number(carAllowance || 0) * inclusionRate;
+  function compute(): Computed {
+    const year = f.year;
+    const notes: string[] = [];
 
-    const dw = typeof daysWorked === "number" ? daysWorked : Number(daysWorked || 0);
-    const dm = typeof daysInMonth === "number" ? daysInMonth : Number(daysInMonth || 0);
-    const prorataFactor = prorated && dw > 0 && dm > 0 ? Math.min(1, dw / dm) : 1;
+    if (year === "2025/26") {
+      notes.push("2025/26 uses 2024/25 tables provisionally — update once official figures are confirmed.");
+    }
 
-    // Remuneration-like base used for RA cap: monthlyBase + includable allowance (pre-RA)
-    const monthlyRemuneration = (monthlyBase + monthlyAllowanceIncludable) * prorataFactor;
+    // Proration factor m
+    // - Yearly mode: months/12
+    // - Monthly mode: daysWorked/daysInMonth
+    const m =
+      f.mode === "Monthly"
+        ? clamp01((f.daysWorked || 0) / Math.max(1, f.daysInMonth || 0))
+        : clamp01((f.prorataMonths || 12) / 12);
 
-    // Annualised taxable BEFORE RA deduction
-    const annualTaxableBeforeRA = monthlyRemuneration * 12;
+    // Annualised base (pro-rated by m)
+    const grossAnnual =
+      f.mode === "Monthly"
+        ? (f.grossMonthly || 0) * 12 * m
+        : (f.grossAnnual || 0) * m;
 
-    // ---------------- RA deduction (CORRECT) ----------------
-    // Contribution input: monthly if mode=monthly, else annual
-    const contribAnnual = mode === "monthly"
-      ? Number(retirementContribution || 0) * 12
-      : Number(retirementContribution || 0);
+    // Allowance 80% taxable (preview), annualised & pro-rated
+    const carAnnualTaxable = Math.max(0, f.carAllowanceMonthly) * 12 * 0.8 * m;
 
-    // Cap base = greater of (annual remuneration, annual taxable before RA)
-    const annualRemuneration = monthlyRemuneration * 12;
-    const raCapBase = Math.max(annualRemuneration, annualTaxableBeforeRA);
+    // RA input → annual before pro-rating
+    const raInputAnnual =
+      f.mode === "Monthly"
+        ? Math.max(0, f.retirementAnnuityMonthly || 0) * 12
+        : Math.max(0, f.retirementAnnuityAnnual || 0);
 
-    // Allowed = min(contribution, 27.5% * capBase, 350_000), floored at 0
-    const cap27_5 = 0.275 * raCapBase;
-    const annualRAAllowed = Math.max(0, Math.min(contribAnnual, cap27_5, 350_000));
+    // RA limit (annual) pro-rated: min(27.5% of income, R350k) × m
+    const raMax = Math.min(grossAnnual * 0.275, 350000 * m);
+    const raAllowed = Math.max(0, Math.min(raInputAnnual * m, raMax));
+    if (raInputAnnual * m > raMax + 1e-6) {
+      notes.push(`RA capped to ${currency(raAllowed)} (27.5% / R350k rule, pro-rated).`);
+    }
 
-    // Apply RA deduction
-    const annualTaxableAfterRA = Math.max(0, annualTaxableBeforeRA - annualRAAllowed);
+    // Taxable income (simple model)
+    const taxableBeforeRA = Math.max(0, grossAnnual + carAnnualTaxable);
+    const taxableAfterRA = Math.max(0, taxableBeforeRA - raAllowed);
 
-    // Annual normal tax (after RA), then apply rebates
-    const annualTax = Math.max(0, normalTaxAnnual(annualTaxableAfterRA, cfg.brackets) - rebates);
+    // PAYE (annual) before credits
+    const payeAnnual = calcPAYEAnnual(year, taxableAfterRA);
 
-    // Monthly before credits, then subtract MTC (if member)
-    const monthlyBeforeMTC = annualTax / 12;
-    const mtc = medicalMember ? monthlyMTC(Math.max(0, dependants ?? 0), cfg.mtc) : 0;
-    const monthlyPAYE = Math.max(0, monthlyBeforeMTC - mtc);
+    // Credits (annual) pro-rated
+    const rebates = ageRebates(year, f.age) * m;
+    const mtc = mtcAnnual(year, f.medicalDependants) * m;
 
-    setComputed({
-      monthlyTaxableForPAYE: monthlyRemuneration,
-      annualTaxableBeforeRA,
-      annualRAAllowed,
-      annualTaxableAfterRA,
-      monthlyBeforeMTC,
-      monthlyPAYE,
-      annualPAYE: monthlyPAYE * 12,
-      mtcPerMonth: mtc,
-      inclusionRate,
-    });
+    const payeAfterCredits = Math.max(0, payeAnnual - rebates - mtc);
+
+    // Monthly display
+    // ✅ In Monthly mode divide by 12; in Yearly divide by months represented (rounded)
+    const monthsCount = f.mode === "Monthly" ? 12 : Math.max(1, Math.round(12 * m));
+    const payeMonthly = payeAfterCredits / monthsCount;
+    const netMonthly = Math.max(0, (grossAnnual / monthsCount) - payeMonthly);
+
+    // Marginal rate (for two-pot savings estimate)
+    const brackets = PAYE_TABLES[year].brackets;
+    const currentBracket = brackets.find((b) => b.upTo === null || taxableAfterRA <= (b.upTo as number))!;
+    const marginal = currentBracket.rate;
+
+    // Two-pot savings withdrawal taxed at marginal (estimate)
+    const savingsWithdrawalTax = Math.max(0, f.savingsWithdrawal * marginal);
+
+    // Old-reg withdrawal (table; rolling)
+    const oldRegWithdrawalTax = taxableFromLump(WITHDRAWAL_LUMP_TABLE, f.oldRegWithdrawal, f.priorTaxableLumps);
+
+    // Retirement lump sum (table; rolling with prior + oldReg)
+    const retirementLumpTax = taxableFromLump(
+      RETIREMENT_LUMP_TABLE,
+      f.retirementLumpSum,
+      f.priorTaxableLumps + f.oldRegWithdrawal
+    );
+
+    if (f.mode === "Monthly") notes.push(`Monthly proration: days worked (${f.daysWorked}) / days in month (${f.daysInMonth}).`);
+    if (f.savingsWithdrawal > 0) notes.push(`Two-pot savings withdrawal taxed at marginal rate ≈ ${(marginal * 100).toFixed(1)}%.`);
+    if (f.oldRegWithdrawal > 0) notes.push("Old-reg withdrawal lump-sum table applied.");
+    if (f.retirementLumpSum > 0) notes.push("Retirement lump-sum table applied with rolling prior lumps.");
+
+    return {
+      taxableAnnualBeforeRA: taxableBeforeRA,
+      raAllowedAnnual: raAllowed,
+      taxableAnnualAfterRA: taxableAfterRA,
+      mtcAnnual: mtc,
+      rebatesAnnual: rebates,
+      payeAnnualBeforeCredits: payeAnnual,
+      payeAnnualAfterCredits: payeAfterCredits,
+      payeMonthly,
+      estNetMonthly: netMonthly,
+      marginalRate: marginal,
+      savingsWithdrawalTax,
+      oldRegWithdrawalTax,
+      retirementLumpTax,
+      prorataFactor: m,
+      notes,
+    };
+  }
+
+  function onCompute() {
+    const c = compute();
+    setComputed(c);
     setDirty(false);
   }
 
-  // --- Share helpers ---
-  function shareSummary() {
-    if (!computed) return "SARS Tax result (Scend): Enter inputs and click Calculate.";
-    return [
-      `SARS Tax Calculator — ${cfg.label}`,
-      `Taxable (annualised): ${fmt(computed.annualTaxableAfterRA)} (after RA deduction of ${fmt(computed.annualRAAllowed)})`,
-      `PAYE (monthly): ${fmt(computed.monthlyPAYE)}`,
-      `MTC (monthly): ${fmt(computed.mtcPerMonth)}`,
-    ].join(" • ");
-  }
-  function waShare() {
-    const text = encodeURIComponent(shareSummary() + " — " + (typeof window !== "undefined" ? window.location.href : ""));
-    const url = `https://wa.me/?text=${text}`;
-    window.open(url, "_blank");
-  }
-  function emailShare() {
-    const subject = encodeURIComponent("SARS Tax result — Scend");
-    const body = encodeURIComponent(shareSummary() + "\n\n" + (typeof window !== "undefined" ? window.location.href : ""));
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  }
-  async function copyShare() {
-    try {
-      const text = shareSummary() + " — " + (typeof window !== "undefined" ? window.location.href : "");
-      await navigator.clipboard.writeText(text);
-      alert("Copied to clipboard");
-    } catch {
-      alert("Copy failed");
-    }
-  }
-
-  function exportPDF() {
-    if (!computed) return;
-    const doc = new jsPDF();
-
-    if (logoDataUrl) { try { doc.addImage(logoDataUrl, "PNG", 160, 10, 34, 14); } catch {} }
-
-    doc.setFontSize(14);
-    doc.text("SARS Tax Calculator — Scend", 14, 16);
-    doc.setFontSize(10);
-    doc.text(`Tax year: ${cfg.label}${cfg.isProvisional ? " (provisional)" : ""} — ends ${cfg.taxYearEnd.toDateString()}`, 14, 23);
-    doc.text(`Mode: ${mode}`, 14, 28);
-
-    autoTable(doc, {
-      startY: 34,
-      head: [["Field", "Value"]],
-      body: [
-        ["Age (years)", typeof age === "number" ? String(age) : String(Number(age || 0))],
-        ["Medical aid member?", medicalMember ? "Yes" : "No"],
-        ["Gross Monthly (entered)", fmt(Number(grossMonthly || 0))],
-        ["Gross Annual (entered)", fmt(Number(grossAnnual || 0))],
-        ["Car Allowance (monthly, includable)", fmt((Number(carAllowance || 0) * (computed.inclusionRate || 0)))],
-        ["Prorated?", prorated ? `Yes (${daysWorked}/${daysInMonth})` : "No"],
-        ["Retirement contributions (" + (mode === "monthly" ? "monthly" : "annual") + " input)", fmt(Number(retirementContribution || 0))],
-        ["RA deduction allowed (annual)", fmt(computed.annualRAAllowed)],
-        ["Taxable income (annualised, before RA)", fmt(computed.annualTaxableBeforeRA)],
-        ["Taxable income (annualised, after RA)", fmt(computed.annualTaxableAfterRA)],
-        ["PAYE before MTC (monthly)", fmt(computed.monthlyBeforeMTC)],
-        ["Medical tax credit (monthly)", fmt(computed.mtcPerMonth)],
-        ["PAYE (monthly)", fmt(computed.monthlyPAYE)],
-        ["PAYE (annual)", fmt(computed.annualPAYE)],
-      ],
-      styles: { fontSize: 10 },
-      theme: "grid",
-      margin: { left: 14, right: 14 },
+  function onClear() {
+    setF({
+      year: "2025/26",
+      mode: "Yearly",
+      grossMonthly: 30000,
+      grossAnnual: 360000,
+      retirementAnnuityAnnual: 0,
+      retirementAnnuityMonthly: 0,
+      carAllowanceMonthly: 0,
+      medicalDependants: 0,
+      age: 35,
+      prorataMonths: 12,
+      daysWorked: 30,
+      daysInMonth: 30,
+      savingsWithdrawal: 0,
+      oldRegWithdrawal: 0,
+      retirementLumpSum: 0,
+      priorTaxableLumps: 0,
     });
-
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const footerY = doc.internal.pageSize.getHeight() - 12;
-    const disclaimer = "Disclaimer: Estimates for guidance only. Retirement deduction limited to 27.5% (R350k cap). 2025/26 values marked 'provisional'. Final liability depends on SARS assessment.";
-    doc.setFontSize(8);
-    doc.text(disclaimer, 14, footerY, { maxWidth: pageWidth - 28 });
-
-    doc.save("Scend_Tax_Calculation.pdf");
-  }
-
-  function clearAll() {
-    setMode("monthly");
-    setGrossMonthly("");
-    setGrossAnnual("");
-    setAge("");
-    setMedicalMember(false);
-    setDependants(0);
-    setCarAllowance("");
-    setUse20pcInclusion(false);
-    setProrated(false);
-    setDaysWorked("");
-    setDaysInMonth("");
-    setRetirementContribution("");
     setComputed(null);
     setDirty(false);
   }
 
-  function markDirty<T>(setter: (v: T) => void) {
-    return (v: T) => { setter(v); setDirty(true); };
+  async function onPDF() {
+    if (!computed) return alert("Click Calculate first.");
+
+    const { jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const w = doc.internal.pageSize.getWidth();
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text(`Scend – SARS Tax Estimate (${f.year})`, w / 2, 56, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, w / 2, 72, { align: "center" });
+
+    autoTable(doc, {
+      startY: 96,
+      styles: { fontSize: 10, cellPadding: 6, halign: "left" },
+      head: [["Item", "Value"]],
+      body: [
+        ["Year", f.year],
+        ["Mode", f.mode],
+        ["Age", String(f.age)],
+        ...(f.mode === "Monthly"
+          ? [
+              ["Proration (days)", `${f.daysWorked} / ${f.daysInMonth}`],
+              ["Proration factor", computed.prorataFactor.toFixed(4)],
+            ]
+          : [
+              ["Pro-rata months", String(f.prorataMonths)],
+              ["Proration factor", computed.prorataFactor.toFixed(4)],
+            ]),
+        [
+          "Gross Annual (pro-rated)",
+          currency(f.mode === "Monthly" ? f.grossMonthly * 12 * computed.prorataFactor : f.grossAnnual * computed.prorataFactor),
+        ],
+        ["Car Allowance taxable (annual)", currency(Math.max(0, f.carAllowanceMonthly) * 12 * 0.8 * computed.prorataFactor)],
+        ["RA allowed (annual, pro-rated)", currency(computed.raAllowedAnnual)],
+        ["Taxable Before RA", currency(computed.taxableAnnualBeforeRA)],
+        ["Taxable After RA", currency(computed.taxableAnnualAfterRA)],
+        ["PAYE (annual before credits)", currency(computed.payeAnnualBeforeCredits)],
+        ["Age Rebates (annual, pro-rated)", currency(computed.rebatesAnnual)],
+        ["Medical Tax Credits (annual, pro-rated)", currency(computed.mtcAnnual)],
+        ["PAYE (annual after credits)", currency(computed.payeAnnualAfterCredits)],
+        ["PAYE (monthly)", currency(computed.payeMonthly)],
+        ["Estimated Net (monthly)", currency(computed.estNetMonthly)],
+        ...(f.savingsWithdrawal > 0
+          ? [["Two-pot Savings Withdrawal Tax (≈ marginal)", currency(computed.savingsWithdrawalTax)]]
+          : []),
+        ...(f.oldRegWithdrawal > 0
+          ? [["Old-Reg Withdrawal Lump-Sum Tax", currency(computed.oldRegWithdrawalTax)]]
+          : []),
+        ...(f.retirementLumpSum > 0
+          ? [["Retirement Lump-Sum Tax", currency(computed.retirementLumpTax)]]
+          : []),
+        ...(computed.notes.length ? computed.notes.map((n) => ["Note", n] as [string, string]) : []),
+      ],
+      theme: "striped",
+      headStyles: { fillColor: [219, 39, 119] },
+    });
+
+    const y = (doc as any).lastAutoTable.finalY + 24;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.text(
+      "Disclaimer: Educational estimate, not tax advice. Actual PAYE / lump-sum tax depends on SARS rules,\n" +
+        "employer payroll setup, allowable deductions, and cumulative history. Replace tables with your official pack if needed.",
+      56,
+      y
+    );
+
+    doc.save(`Scend_Tax_${f.year.replace("/", "-")}.pdf`);
   }
 
+  /* ──────────────────────────────────────────────────────────────────
+     UI — Premium look & feel (matching LoanTool)
+     ────────────────────────────────────────────────────────────────── */
   return (
-    <section className="mx-auto max-w-5xl p-6 space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">SARS Tax Tool</h1>
-          <p className="text-sm text-gray-600">Choose yearly or monthly, add dependants, age (for rebates), car allowance, and retirement contributions.</p>
+    <div className="space-y-8">
+      {/* Premium header */}
+      <section className="rounded-3xl bg-gradient-to-br from-pink-50 via-white to-white p-8 shadow-sm ring-1 ring-gray-200/60">
+        <div className="max-w-3xl">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+            Scend Tax Tool
+          </h1>
+          <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
+            SARS-style PAYE with age rebates, medical credits, RA limits, <em>Monthly day-proration</em> or <em>Yearly months</em>, and Two-Pot / Lump-Sum calculations.
+          </p>
         </div>
-      </div>
+      </section>
 
-      {/* Inputs */}
-      <Card title="Inputs" footer={
-        <div className="flex flex-wrap gap-2">
-          <button className="rounded-xl px-4 py-2 bg-pink-600 text-white hover:opacity-90" onClick={computeNow}>Calculate</button>
-          <button className="rounded-xl px-4 py-2 border" onClick={clearAll}>Clear</button>
-          <button className="rounded-xl px-4 py-2 border" onClick={exportPDF} disabled={!computed} title={!computed ? "Click Calculate first" : "Export PDF"}>Export PDF</button>
-          {dirty && <span className="text-xs text-amber-600 self-center">Values changed — click <b>Calculate</b>.</span>}
-        </div>
-      }>
-        <div className="grid gap-4">
-          <Field label="Tax Year">
-            <select
-              className="border rounded-lg px-3 py-2 w-full"
-              value={taxYearKey}
-              onChange={(e) => { setTaxYearKey(e.target.value as keyof typeof YEARS); setDirty(true); }}
-            >
-              {Object.keys(YEARS).map((k) => (
-                <option key={k} value={k}>{YEARS[k].label}</option>
-              ))}
-            </select>
-          </Field>
-          {YEARS[taxYearKey].isProvisional && (
-            <div className="text-xs text-amber-600 -mt-2">Provisional values — update when SARS publishes 2025/26 tables.</div>
-          )}
+      <section className="grid gap-6 md:grid-cols-2">
+        {/* Form */}
+        <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-gray-200/70">
+          <h2 className="text-lg font-semibold text-gray-900">Inputs</h2>
 
-          <Field label="Calculation Mode">
-            <select
-              className="border rounded-lg px-3 py-2 w-full"
-              value={mode}
-              onChange={(e) => { setMode(e.target.value as "yearly" | "monthly"); setDirty(true); }}
-            >
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
-          </Field>
+          <div className="mt-5 grid gap-4">
+            {/* Year, Mode, Proration */}
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="text-[15px] text-gray-900">
+                Tax Year
+                <select
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.year}
+                  onChange={(e) => markDirty(setF)({ ...f, year: e.target.value as YearMode })}
+                >
+                  <option>2025/26</option>
+                  <option>2024/25</option>
+                  <option>2023/24</option>
+                  <option>2022/23</option>
+                  <option>2021/22</option>
+                </select>
+              </label>
 
-          {/* Independent gross fields */}
-          <Field label="Gross Monthly Income (R)" hint="Used when mode = Monthly. Annual value is preserved separately.">
-            <input
-              type="number" min={0}
-              className="border rounded-lg px-3 py-2 w-56"
-              value={grossMonthly}
-              onChange={(e) => markDirty(setGrossMonthly)(e.target.value === "" ? "" : Number(e.target.value))}
-            />
-          </Field>
+              <label className="text-[15px] text-gray-900">
+                Mode
+                <select
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.mode}
+                  onChange={(e) => markDirty(setF)({ ...f, mode: e.target.value as Mode })}
+                >
+                  <option>Monthly</option>
+                  <option>Yearly</option>
+                </select>
+              </label>
 
-          <Field label="Gross Annual Income (R)" hint="Used when mode = Yearly. Monthly value is preserved separately.">
-            <input
-              type="number" min={0}
-              className="border rounded-lg px-3 py-2 w-56"
-              value={grossAnnual}
-              onChange={(e) => markDirty(setGrossAnnual)(e.target.value === "" ? "" : Number(e.target.value))}
-            />
-          </Field>
+              {f.mode === "Yearly" ? (
+                <label className="text-[15px] text-gray-900">
+                  Pro-rata months
+                  <input
+                    type="number"
+                    min={1}
+                    max={12}
+                    className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                    value={f.prorataMonths}
+                    onChange={(e) => markDirty(setF)({ ...f, prorataMonths: Number(e.target.value) })}
+                  />
+                  <span className="mt-1 block text-[12px] text-gray-700">Use &lt;12 for YTD.</span>
+                </label>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2 md:col-span-1">
+                  <label className="text-[15px] text-gray-900">
+                    Days worked
+                    <input
+                      type="number"
+                      min={0}
+                      max={Math.max(1, f.daysInMonth)}
+                      className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                      value={f.daysWorked}
+                      onChange={(e) => markDirty(setF)({ ...f, daysWorked: Number(e.target.value) })}
+                    />
+                  </label>
+                  <label className="text-[15px] text-gray-900">
+                    Days in month
+                    <input
+                      type="number"
+                      min={1}
+                      className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                      value={f.daysInMonth}
+                      onChange={(e) => markDirty(setF)({ ...f, daysInMonth: Number(e.target.value) })}
+                    />
+                    <span className="mt-1 block text-[12px] text-gray-700">Within-month proration.</span>
+                  </label>
+                </div>
+              )}
+            </div>
 
-          <Field label="Age (years)">
-            <input
-              type="number" min={0}
-              className="border rounded-lg px-3 py-2 w-28"
-              value={age}
-              onChange={(e) => markDirty(setAge)(e.target.value === "" ? "" : Number(e.target.value))}
-              placeholder="e.g. 40"
-              title="Age in years (at end of selected tax year)"
-            />
-          </Field>
+            {/* Income */}
+            <div className="grid gap-3 md:grid-cols-3">
+              {f.mode === "Monthly" ? (
+                <label className="text-[15px] text-gray-900">
+                  Gross Monthly (R)
+                  <input
+                    type="number"
+                    min={0}
+                    className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                    value={f.grossMonthly}
+                    onChange={(e) => markDirty(setF)({ ...f, grossMonthly: Number(e.target.value) })}
+                  />
+                </label>
+              ) : (
+                <label className="text-[15px] text-gray-900">
+                  Gross Annual (R)
+                  <input
+                    type="number"
+                    min={0}
+                    className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                    value={f.grossAnnual}
+                    onChange={(e) => markDirty(setF)({ ...f, grossAnnual: Number(e.target.value) })}
+                  />
+                </label>
+              )}
 
-          <Field label="Medical aid member?">
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={medicalMember} onChange={(e) => markDirty(setMedicalMember)(e.target.checked)} />
-              <span className="text-sm">I belong to a registered medical aid</span>
-            </label>
-          </Field>
-
-          <Field label="Medical Aid Dependants" hint="Dependants on the scheme, excluding you">
-            <input
-              type="number" min={0}
-              className="border rounded-lg px-3 py-2 w-28 disabled:bg-gray-100"
-              value={dependants}
-              onChange={(e) => markDirty(setDependants)(Math.max(0, Number(e.target.value)))}
-              disabled={!medicalMember}
-              title={!medicalMember ? "Enable by ticking medical aid membership" : "Number of dependants on the scheme (excluding you)"}
-            />
-          </Field>
-
-          <Field label="Car Allowance (Monthly) (R)">
-            <input
-              type="number" min={0}
-              className="border rounded-lg px-3 py-2 w-56"
-              value={carAllowance}
-              onChange={(e) => markDirty(setCarAllowance)(e.target.value === "" ? "" : Number(e.target.value))}
-            />
-          </Field>
-
-          <Field label="Travel allowance PAYE inclusion" hint="PAYE normally withholds on 80% of a travel allowance; 20% may be used if employer is satisfied ≥80% is for business use.">
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={use20pcInclusion} onChange={(e) => markDirty(setUse20pcInclusion)(e.target.checked)} />
-              <span className="text-sm">Use 20% inclusion (≥80% business use)</span>
-            </label>
-          </Field>
-
-          <Field label="Month is prorated">
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={prorated} onChange={(e) => markDirty(setProrated)(e.target.checked)} />
-              <span className="text-sm">Enable prorata</span>
-            </label>
-          </Field>
-
-          {prorated && (
-            <div className="grid md:grid-cols-2 gap-4 pl-0 md:pl-[220px]">
-              <div>
-                <div className="text-sm text-gray-600 mb-1">Days worked this month</div>
+              <label className="text-[15px] text-gray-900">
+                Age (years)
                 <input
-                  className="border rounded-lg px-3 py-2 w-full"
-                  placeholder="e.g. 23"
-                  type="number" min={1}
-                  value={daysWorked}
-                  onChange={(e) => markDirty(setDaysWorked)(e.target.value === "" ? "" : Number(e.target.value))}
+                  type="number"
+                  min={18}
+                  max={100}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.age}
+                  onChange={(e) => markDirty(setF)({ ...f, age: Number(e.target.value) })}
                 />
+              </label>
+
+              <label className="text-[15px] text-gray-900">
+                Car Allowance (Monthly, R)
+                <input
+                  type="number"
+                  min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.carAllowanceMonthly}
+                  onChange={(e) => markDirty(setF)({ ...f, carAllowanceMonthly: Number(e.target.value) })}
+                />
+                <span className="mt-1 block text-[12px] text-gray-700">80% taxable preview.</span>
+              </label>
+            </div>
+
+            {/* Credits & RA */}
+            <div className="grid gap-3 md:grid-cols-3">
+              <label className="text-[15px] text-gray-900">
+                Medical Dependants
+                <input
+                  type="number"
+                  min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.medicalDependants}
+                  onChange={(e) => markDirty(setF)({ ...f, medicalDependants: Number(e.target.value) })}
+                />
+                <span className="mt-1 block text-[12px] text-gray-700">Excludes main member.</span>
+              </label>
+
+              {f.mode === "Monthly" ? (
+                <label className="text-[15px] text-gray-900 md:col-span-2">
+                  Retirement Annuity (Monthly, R)
+                  <input
+                    type="number"
+                    min={0}
+                    className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                    value={f.retirementAnnuityMonthly}
+                    onChange={(e) => markDirty(setF)({ ...f, retirementAnnuityMonthly: Number(e.target.value) })}
+                  />
+                  <span className="mt-1 block text-[12px] text-gray-700">
+                    Annualised ×12 and pro-rated by days when in Monthly mode. Cap: 27.5% of income, max R350k p.a.
+                  </span>
+                </label>
+              ) : (
+                <label className="text-[15px] text-gray-900 md:col-span-2">
+                  Retirement Annuity (Annual, R)
+                  <input
+                    type="number"
+                    min={0}
+                    className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                    value={f.retirementAnnuityAnnual}
+                    onChange={(e) => markDirty(setF)({ ...f, retirementAnnuityAnnual: Number(e.target.value) })}
+                  />
+                  <span className="mt-1 block text-[12px] text-gray-700">
+                    Pro-rated by months when in Yearly mode. Cap: 27.5% of income, max R350k p.a.
+                  </span>
+                </label>
+              )}
+            </div>
+
+            {/* Two-pot & Lump sums */}
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-[15px] text-gray-900">
+                Two-Pot Savings Withdrawal (R)
+                <input
+                  type="number"
+                  min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.savingsWithdrawal}
+                  onChange={(e) => markDirty(setF)({ ...f, savingsWithdrawal: Number(e.target.value) })}
+                />
+                <span className="mt-1 block text-[12px] text-gray-700">Taxed at marginal rate (estimate).</span>
+              </label>
+
+              <label className="text-[15px] text-gray-900">
+                Old-Reg Withdrawal Lump Sum (R)
+                <input
+                  type="number"
+                  min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.oldRegWithdrawal}
+                  onChange={(e) => markDirty(setF)({ ...f, oldRegWithdrawal: Number(e.target.value) })}
+                />
+                <span className="mt-1 block text-[12px] text-gray-700">Uses withdrawal table.</span>
+              </label>
+
+              <label className="text-[15px] text-gray-900">
+                Retirement Lump Sum (R)
+                <input
+                  type="number"
+                  min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.retirementLumpSum}
+                  onChange={(e) => markDirty(setF)({ ...f, retirementLumpSum: Number(e.target.value) })}
+                />
+                <span className="mt-1 block text-[12px] text-gray-700">Uses retirement lump-sum table.</span>
+              </label>
+
+              <label className="text-[15px] text-gray-900">
+                Prior Taxable Lumps (R)
+                <input
+                  type="number"
+                  min={0}
+                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[15px] focus:outline-none focus:ring-2 focus:ring-pink-200"
+                  value={f.priorTaxableLumps}
+                  onChange={(e) => markDirty(setF)({ ...f, priorTaxableLumps: Number(e.target.value) })}
+                />
+                <span className="mt-1 block text-[12px] text-gray-700">Rolling basis for the tables.</span>
+              </label>
+            </div>
+
+            {/* Buttons */}
+            <div className="mt-2 flex flex-wrap gap-3">
+              <button
+                onClick={onCompute}
+                className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-white bg-pink-600 hover:bg-pink-700"
+              >
+                Calculate
+              </button>
+
+              <button
+                onClick={onClear}
+                className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-gray-900 bg-white ring-1 ring-gray-200 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-pink-200"
+              >
+                Clear
+              </button>
+
+              <button
+                onClick={onPDF}
+                className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-gray-900 bg-white ring-1 ring-gray-200 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-pink-200"
+                disabled={!computed}
+                title={!computed ? "Click Calculate first" : "Export PDF"}
+              >
+                Export PDF
+              </button>
+
+              {dirty && (
+                <span className="text-xs text-amber-600 self-center">
+                  Values changed — click <b>Calculate</b>.
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Results */}
+        <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-gray-200/70">
+          <h2 className="text-lg font-semibold text-gray-900">Results</h2>
+
+          {!computed ? (
+            <div className="mt-4 text-[15px] text-gray-700">
+              Enter details and click <strong>Calculate</strong> to see results.
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-2 text-[15px]">
+              <div className="flex items-center justify-between">
+                <span>Taxable Before RA</span>
+                <span>{currency(computed.taxableAnnualBeforeRA)}</span>
               </div>
-              <div>
-                <div className="text-sm text-gray-600 mb-1">Total days in month</div>
-                <input
-                  className="border rounded-lg px-3 py-2 w-full"
-                  placeholder="e.g. 28 / 30 / 31"
-                  type="number" min={1}
-                  value={daysInMonth}
-                  onChange={(e) => markDirty(setDaysInMonth)(e.target.value === "" ? "" : Number(e.target.value))}
-                />
+              <div className="flex items-center justify-between">
+                <span>RA Allowed (annual)</span>
+                <span>{currency(computed.raAllowedAnnual)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Taxable After RA</span>
+                <span>{currency(computed.taxableAnnualAfterRA)}</span>
+              </div>
+
+              <div className="mt-2 grid gap-2 rounded-xl bg-gray-50 px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <span>PAYE (annual before credits)</span>
+                  <span>{currency(computed.payeAnnualBeforeCredits)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Age Rebates (annual, pro-rated)</span>
+                  <span>{currency(computed.rebatesAnnual)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Medical Tax Credits (annual, pro-rated)</span>
+                  <span>{currency(computed.mtcAnnual)}</span>
+                </div>
+                <div className="flex items-center justify-between font-semibold">
+                  <span>PAYE (annual after credits)</span>
+                  <span>{currency(computed.payeAnnualAfterCredits)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>PAYE (monthly)</span>
+                  <span>{currency(computed.payeMonthly)}</span>
+                </div>
+                <div className="flex items-center justify-between font-semibold">
+                  <span>Estimated Net (monthly)</span>
+                  <span>{currency(computed.estNetMonthly)}</span>
+                </div>
+              </div>
+
+              {(f.savingsWithdrawal > 0 || f.oldRegWithdrawal > 0 || f.retirementLumpSum > 0) && (
+                <>
+                  <div className="mt-2 text-[13px] text-gray-700 font-medium">Lump-sum / Two-Pot results</div>
+                  {f.savingsWithdrawal > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span>Two-Pot Savings Withdrawal Tax</span>
+                      <span>
+                        {currency(computed.savingsWithdrawalTax)}{" "}
+                        <em className="text-gray-500">(≈ marginal {(computed.marginalRate * 100).toFixed(1)}%)</em>
+                      </span>
+                    </div>
+                  )}
+                  {f.oldRegWithdrawal > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span>Old-Reg Withdrawal Lump-Sum Tax</span>
+                      <span>{currency(computed.oldRegWithdrawalTax)}</span>
+                    </div>
+                  )}
+                  {f.retirementLumpSum > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span>Retirement Lump-Sum Tax</span>
+                      <span>{currency(computed.retirementLumpTax)}</span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {computed.notes.length > 0 && (
+                <div className="mt-2 rounded-xl bg-pink-50/70 px-3 py-2 text-[14px]">
+                  <div className="font-semibold mb-1">Notes</div>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {computed.notes.map((n, i) => (
+                      <li key={i}>{n}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Disclaimer */}
+              <div className="mt-4 rounded-xl bg-white px-3 py-2 ring-1 ring-gray-200 text-[12.5px] text-gray-700">
+                <strong>Disclaimer:</strong> Educational estimate. Tables and outcomes depend on SARS rules,
+                cumulative assessments, and employer payroll setup. Replace tables with your official SARS pack if needed.
               </div>
             </div>
           )}
-
-          {/* Retirement contributions */}
-          <Field label={`Retirement contributions (${mode === "monthly" ? "monthly" : "annual"})`} hint="Deduction limited to the lesser of: your contribution, 27.5% of the greater of remuneration or taxable income (pre-RA), and R350,000 per year. Unused may be carried forward at assessment (not modelled here).">
-            <input
-              type="number" min={0}
-              className="border rounded-lg px-3 py-2 w-56"
-              value={retirementContribution}
-              onChange={(e) => markDirty(setRetirementContribution)(e.target.value === "" ? "" : Number(e.target.value))}
-              placeholder={mode === "monthly" ? "e.g. 3000 (per month)" : "e.g. 36000 (per year)"}
-            />
-          </Field>
         </div>
-      </Card>
-
-      {/* Results */}
-      <Card title="Results" footer={
-        <div className="flex flex-wrap gap-2">
-          <button className="rounded-xl px-3 py-2 border" onClick={waShare} disabled={!computed}>Share WhatsApp</button>
-          <button className="rounded-xl px-3 py-2 border" onClick={emailShare} disabled={!computed}>Share Email</button>
-          <button className="rounded-xl px-3 py-2 border" onClick={copyShare} disabled={!computed}>Copy summary</button>
-        </div>
-      }>
-        {computed ? (
-          <div className="grid gap-2">
-            <div className="flex justify-between"><span>Taxable (annualised) — before retirement</span><b>{fmt(computed.annualTaxableBeforeRA)}</b></div>
-            <div className="flex justify-between"><span>Retirement deduction allowed (annual)</span><b>{fmt(computed.annualRAAllowed)}</b></div>
-            <div className="flex justify-between"><span>Taxable (annualised) — after retirement</span><b>{fmt(computed.annualTaxableAfterRA)}</b></div>
-            <div className="flex justify-between"><span>PAYE (monthly)</span><b>{fmt(computed.monthlyPAYE)}</b></div>
-            <div className="flex justify-between"><span>PAYE (annual)</span><b>{fmt(computed.annualPAYE)}</b></div>
-            <div className="flex justify-between"><span>Medical tax credit (per month)</span><b>{fmt(computed.mtcPerMonth)}</b></div>
-            <p className="text-xs text-gray-500 mt-2">
-              Retirement deduction rule applied: lesser of contribution, 27.5% of the greater of remuneration or taxable income (pre-RA), and R350,000 cap.
-              Brackets, rebates and medical credits per SARS. {YEARS[taxYearKey].isProvisional ? "This tax year is provisional — update when SARS releases tables." : ""}
-            </p>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-600">Enter inputs and click <b>Calculate</b> to see results.</p>
-        )}
-      </Card>
-    </section>
+      </section>
+    </div>
   );
 }
