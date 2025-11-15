@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- Global base styles --- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #f7f7f8;
+  color: #111827;
+}
+
+.glow {
+  position: relative;
+}
+
+html {
+  scroll-behavior: smooth;
+}
