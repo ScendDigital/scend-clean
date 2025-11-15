@@ -3,11 +3,11 @@
 
 import * as React from "react";
 
-/* ──────────────────────────────────────────────────────────────────
+/* ------------------------------------------------------------------
    SARS tables & helpers
    NOTE: 2025/26 is provisional — mirrors 2024/25 until official release.
    MTC: R364 (main+first), R246 (each additional) per month.
-   ────────────────────────────────────────────────────────────────── */
+   ------------------------------------------------------------------ */
 
 type TaxBracket = { upTo: number | null; base: number; rate: number; over: number };
 type Rebates = { primary: number; secondary: number; tertiary: number };
@@ -15,7 +15,7 @@ type MTC = { mainAndFirst: number; additional: number }; // monthly credits
 type YearKey = "2025/26" | "2024/25" | "2023/24" | "2022/23" | "2021/22";
 
 const PAYE_TABLES: Record<YearKey, { brackets: TaxBracket[]; rebates: Rebates; mtc: MTC }> = {
-  // 🚧 Provisional: mirrors 2024/25 figures until official 2025/26 are confirmed.
+  // ?? Provisional: mirrors 2024/25 figures until official 2025/26 are confirmed.
   "2025/26": {
     brackets: [
       { upTo: 237100, base: 0, rate: 0.18, over: 0 },
@@ -126,7 +126,7 @@ type Inputs = {
   daysInMonth: number;   // Monthly mode
 
   // two-pot & lump sums
-  savingsWithdrawal: number; // two-pot savings → marginal
+  savingsWithdrawal: number; // two-pot savings ? marginal
   oldRegWithdrawal: number;  // old withdrawal table
   retirementLumpSum: number; // retirement table
   priorTaxableLumps: number; // cumulative (rolling)
@@ -199,7 +199,7 @@ function clamp01(n: number) {
   return Math.max(0, Math.min(1, n));
 }
 
-/* ────────────────────────────────────────────────────────────────── */
+/* ------------------------------------------------------------------ */
 
 export default function TaxTool() {
   const [f, setF] = React.useState<Inputs>({
@@ -244,7 +244,7 @@ export default function TaxTool() {
         retirementAnnuityAnnual: Math.max(0, (v.retirementAnnuityMonthly || 0) * 12),
       }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [f.mode]);
 
   const markDirty =
@@ -280,7 +280,7 @@ export default function TaxTool() {
     // Allowance 80% taxable (preview), annualised & pro-rated
     const carAnnualTaxable = Math.max(0, f.carAllowanceMonthly) * 12 * 0.8 * m;
 
-    // RA input → annual before pro-rating
+    // RA input ? annual before pro-rating
     const raInputAnnual =
       f.mode === "Monthly"
         ? Math.max(0, f.retirementAnnuityMonthly || 0) * 12
@@ -307,7 +307,7 @@ export default function TaxTool() {
     const payeAfterCredits = Math.max(0, payeAnnual - rebates - mtc);
 
     // Monthly display
-    // ✅ In Monthly mode divide by 12; in Yearly divide by months represented (rounded)
+    // ? In Monthly mode divide by 12; in Yearly divide by months represented (rounded)
     const monthsCount = f.mode === "Monthly" ? 12 : Math.max(1, Math.round(12 * m));
     const payeMonthly = payeAfterCredits / monthsCount;
     const netMonthly = Math.max(0, (grossAnnual / monthsCount) - payeMonthly);
@@ -331,7 +331,7 @@ export default function TaxTool() {
     );
 
     if (f.mode === "Monthly") notes.push(`Monthly proration: days worked (${f.daysWorked}) / days in month (${f.daysInMonth}).`);
-    if (f.savingsWithdrawal > 0) notes.push(`Two-pot savings withdrawal taxed at marginal rate ≈ ${(marginal * 100).toFixed(1)}%.`);
+    if (f.savingsWithdrawal > 0) notes.push(`Two-pot savings withdrawal taxed at marginal rate ˜ ${(marginal * 100).toFixed(1)}%.`);
     if (f.oldRegWithdrawal > 0) notes.push("Old-reg withdrawal lump-sum table applied.");
     if (f.retirementLumpSum > 0) notes.push("Retirement lump-sum table applied with rolling prior lumps.");
 
@@ -431,7 +431,7 @@ export default function TaxTool() {
         ["PAYE (monthly)", currency(computed.payeMonthly)],
         ["Estimated Net (monthly)", currency(computed.estNetMonthly)],
         ...(f.savingsWithdrawal > 0
-          ? [["Two-pot Savings Withdrawal Tax (≈ marginal)", currency(computed.savingsWithdrawalTax)]]
+          ? [["Two-pot Savings Withdrawal Tax (˜ marginal)", currency(computed.savingsWithdrawalTax)]]
           : []),
         ...(f.oldRegWithdrawal > 0
           ? [["Old-Reg Withdrawal Lump-Sum Tax", currency(computed.oldRegWithdrawalTax)]]
@@ -458,9 +458,9 @@ export default function TaxTool() {
     doc.save(`Scend_Tax_${f.year.replace("/", "-")}.pdf`);
   }
 
-  /* ──────────────────────────────────────────────────────────────────
+  /* ------------------------------------------------------------------
      UI — Premium look & feel (matching LoanTool)
-     ────────────────────────────────────────────────────────────────── */
+     ------------------------------------------------------------------ */
   return (
     <div className="space-y-8">
       {/* Premium header */}
@@ -790,7 +790,7 @@ export default function TaxTool() {
                       <span>Two-Pot Savings Withdrawal Tax</span>
                       <span>
                         {currency(computed.savingsWithdrawalTax)}{" "}
-                        <em className="text-gray-500">(≈ marginal {(computed.marginalRate * 100).toFixed(1)}%)</em>
+                        <em className="text-gray-500">(˜ marginal {(computed.marginalRate * 100).toFixed(1)}%)</em>
                       </span>
                     </div>
                   )}
@@ -832,4 +832,5 @@ export default function TaxTool() {
     </div>
   );
 }
+
 

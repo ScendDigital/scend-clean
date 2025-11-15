@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useState } from "react";
-import ToolDisclaimer from "@/components/shared/ToolDisclaimer";
 
 const ZAR = new Intl.NumberFormat("en-ZA", {
   style: "currency",
@@ -181,8 +180,6 @@ export default function UifTool() {
               </strong>
             </li>
           </ul>
-
-          <ToolDisclaimer kind="uif" />
         </section>
       )}
 
