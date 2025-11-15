@@ -1,12 +1,12 @@
-﻿import React from "react";
-import UIFTool from "@/components/UIFTool";
+﻿"use client";
 
-export default function UIFPage() {
+import UifTool from "@/components/uif/UifTool";
+
+export default function UifPage() {
   return (
-    <main className="min-h-[70vh] flex flex-col items-center justify-center p-6">
-      <div className="max-w-3xl w-full">
-        <h1 className="text-3xl font-bold text-pink-600 mb-6 text-center">UIF Estimator</h1>
-        <UIFTool />
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <UifTool />
       </div>
     </main>
   );

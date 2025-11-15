@@ -1,4 +1,5 @@
-﻿"use client";
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
 import * as React from "react";
 
@@ -259,10 +260,10 @@ export default function UifTool() {
 
   const markDirty =
     <T,>(setter: React.Dispatch<React.SetStateAction<T>>) =>
-    (updater: any) => {
+    (updater: unknown) => {
       setDirty(true);
       setResult(null);
-      setter(updater);
+      setter(updater as any);
     };
 
   function compute() {
@@ -813,3 +814,4 @@ export default function UifTool() {
     </div>
   );
 }
+

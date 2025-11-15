@@ -1,4 +1,5 @@
-﻿"use client";
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
 import * as React from "react";
 
@@ -248,10 +249,10 @@ export default function TaxTool() {
 
   const markDirty =
     <T,>(setter: React.Dispatch<React.SetStateAction<T>>) =>
-    (v: any) => {
+    (v: unknown) => {
       setDirty(true);
       setComputed(null);
-      setter(v);
+      setter(v as any);
     };
 
   function compute(): Computed {
@@ -831,3 +832,4 @@ export default function TaxTool() {
     </div>
   );
 }
+

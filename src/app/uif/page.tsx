@@ -1,10 +1,13 @@
-﻿import ClientOnly from "./ClientOnly";
+"use client";
 
-export const metadata = {
-  title: "Scend UIF Tool",
-  description: "Educational explainer • Department of Employment & Labour rules apply.",
-};
+import UifTool from "@/components/uif/UifTool";
 
-export default function Page() {
-  return <ClientOnly />;
+export default function UifPage() {
+  return (
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <UifTool />
+      </div>
+    </main>
+  );
 }

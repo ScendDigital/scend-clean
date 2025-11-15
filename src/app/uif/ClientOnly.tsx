@@ -2,11 +2,12 @@
 
 import dynamic from "next/dynamic";
 
-// Load UIFTool only on the client (avoids SSR hydration mismatches)
-const UIFTool = dynamic(() => import("../../components/uif/UIFTool"), {
+// Load UifTool only on the client (avoids SSR hydration mismatches)
+const UifTool = dynamic(() => import("../../components/uif/UifTool"), {
   ssr: false,
 });
 
 export default function ClientOnly() {
-  return <UIFTool />;
+  return <UifTool />;
 }
+
