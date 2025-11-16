@@ -1,0 +1,12 @@
+﻿import dynamic from "next/dynamic";
+const LoanTool = dynamic(() => import("../tools/LoanTool"), { ssr: false });
+export default function LoanPage(){
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="mx-auto max-w-5xl px-4 py-10">
+        <h1 className="text-2xl font-bold mb-4">Loan Qualification Tool</h1>
+        <LoanTool />
+      </div>
+    </div>
+  );
+}

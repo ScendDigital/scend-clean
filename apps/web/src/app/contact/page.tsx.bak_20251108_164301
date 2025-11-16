@@ -1,0 +1,137 @@
+﻿"use client";
+
+import * as React from "react";
+import Link from "next/link";
+
+export default function ContactUs() {
+  // Simple mail composer (client-side)
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    const name = String(data.get("name") || "").trim();
+    const email = String(data.get("email") || "").trim();
+    const topic = String(data.get("topic") || "General");
+    const message = String(data.get("message") || "").trim();
+
+    if (!name || !email || !message) {
+      alert("Please fill in your name, email, and message.");
+      return;
+    }
+
+    const to = ["motlatsi.lenyatsa@gmail.com", "thatosebatjane@yahoo.com"].join(",");
+    const subject = encodeURIComponent(`[Scend Contact] ${topic} — ${name}`);
+    const body = encodeURIComponent(
+      `Name: ${name}\nEmail: ${email}\nTopic: ${topic}\n\n${message}\n\n— Sent from scend.co.za`
+    );
+    window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+  }
+
+  return (
+    <div className="space-y-12">
+      {/* Header */}
+      <section className="rounded-2xl bg-gradient-to-br from-[var(--scend-pink-50)] via-white to-white p-8 shadow-sm md:p-12">
+        <div className="max-w-3xl">
+          <h1 className="text-3xl font-bold text-[var(--scend-gray-900)] md:text-4xl">Contact Us</h1>
+          <p className="mt-3 text-[15px] text-[var(--scend-gray-700)] leading-relaxed">
+            We’d love to hear from you. Whether you’re exploring our financial tools, publishing services,
+            or general enquiries — drop us a message and we’ll get back to you soon.
+          </p>
+        </div>
+      </section>
+
+      {/* Form and WhatsApp */}
+      <section className="grid gap-6 md:grid-cols-2">
+        {/* Send Message Form */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-[var(--scend-gray-200)]/70 md:p-8">
+          <h2 className="text-lg font-semibold text-[var(--scend-gray-900)]">Send a message</h2>
+          <p className="mt-1 text-[15px] text-[var(--scend-gray-700)]">
+            Your message will open in your email app addressed to our team.
+          </p>
+
+          <form onSubmit={onSubmit} className="mt-5 space-y-4">
+            <div>
+              <label className="block text-[15px] font-medium text-[var(--scend-gray-900)]">Full name</label>
+              <input
+                name="name"
+                type="text"
+                required
+                className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] bg-white px-3 py-2 text-[15px] outline-none focus:ring-2 focus:ring-[var(--scend-pink-100)]"
+                placeholder="Your name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[15px] font-medium text-[var(--scend-gray-900)]">Email</label>
+              <input
+                name="email"
+                type="email"
+                required
+                className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] bg-white px-3 py-2 text-[15px] outline-none focus:ring-2 focus:ring-[var(--scend-pink-100)]"
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[15px] font-medium text-[var(--scend-gray-900)]">Topic</label>
+              <select
+                name="topic"
+                className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] bg-white px-3 py-2 text-[15px] outline-none focus:ring-2 focus:ring-[var(--scend-pink-100)]"
+                defaultValue="General"
+              >
+                <option>General</option>
+                <option>Loan Tool</option>
+                <option>Tax Tool</option>
+                <option>UIF Tool</option>
+                <option>Price Compare</option>
+                <option>Publishing</option>
+                <option>Partnership</option>
+                <option>Support</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[15px] font-medium text-[var(--scend-gray-900)]">Message</label>
+              <textarea
+                name="message"
+                rows={5}
+                required
+                className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] bg-white px-3 py-2 text-[15px] outline-none focus:ring-2 focus:ring-[var(--scend-pink-100)]"
+                placeholder="How can we help?"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="glow rounded-2xl bg-[var(--scend-pink-600)] px-4 py-2 text-[15px] font-semibold text-white hover:bg-[var(--scend-pink-700)]"
+            >
+              Send message
+            </button>
+          </form>
+        </div>
+
+        {/* WhatsApp Section */}
+        <div className="rounded-2xl bg-[var(--scend-pink-50)]/60 p-6 shadow-sm ring-1 ring-[var(--scend-gray-200)]/70 md:p-8">
+          <h3 className="text-lg font-semibold text-[var(--scend-gray-900)]">Prefer WhatsApp?</h3>
+          <p className="mt-2 text-[15px] text-[var(--scend-gray-700)] leading-relaxed">
+            Send us a quick note — we’ll respond during business hours.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href="https://wa.me/27728037223"
+              className="glow rounded-2xl bg-[var(--scend-pink-600)] px-4 py-2 text-[15px] font-semibold text-white hover:bg-[var(--scend-pink-700)]"
+            >
+              Message Motlatsi
+            </Link>
+            <Link
+              href="https://wa.me/27646519166"
+              className="glow rounded-2xl px-4 py-2 text-[15px] font-semibold text-[var(--scend-gray-900)] ring-1 ring-[var(--scend-gray-200)] hover:bg-[var(--scend-gray-100)]"
+            >
+              Message Thato
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

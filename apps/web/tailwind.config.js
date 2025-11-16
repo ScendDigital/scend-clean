@@ -1,19 +1,12 @@
-﻿/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx}",
-    "./src/components/**/*.{js,ts,jsx,tsx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/tools/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    extend: {
-      colors: {
-        scendPink: "#ff2d87",
-        scendGrey: "#4b5563"
-      },
-      borderRadius: {
-        "2xl": "1rem"
-      }
-    },
+    extend: {},
   },
   plugins: [],
 };

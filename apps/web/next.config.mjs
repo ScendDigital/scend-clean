@@ -1,5 +1,10 @@
+const isVercel = !!process.env.VERCEL;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true
+  // ...your existing config above this line
+
+  ...(isVercel ? { output: "standalone" } : {}),
 };
+
 export default nextConfig;

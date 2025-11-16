@@ -1,0 +1,10 @@
+﻿import ClientOnly from "./ClientOnly";
+
+export const metadata = {
+  title: "Scend UIF Tool",
+  description: "Educational explainer • Department of Employment & Labour rules apply.",
+};
+
+export default function Page() {
+  return <ClientOnly />;
+}
