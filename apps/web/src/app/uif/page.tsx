@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import UifTool from "@/components/uif/UifTool";
+import UifTool from "@/tools/UifTool";
 
 export default function UifPage() {
   return (

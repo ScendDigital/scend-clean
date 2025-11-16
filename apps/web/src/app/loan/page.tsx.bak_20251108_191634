@@ -1,0 +1,228 @@
+﻿"use client";
+
+import * as React from "react";
+import {
+  clampRateToCap,
+  caps,
+  serviceFeeMonthly,
+  disposableIncome as di,
+  dtiAfter,
+  pmt,
+  monthlyRate,
+} from "@/lib/compliance";
+
+// Safe fallback if minPayment.revolving is not exported in your compliance bundle yet.
+const DEFAULT_MIN_PCT = 0.03; // 3% of balance
+
+type Form = {
+  amount: number;
+  term: number;
+  aprNominal: number; // kept for transparency; still clamped to cap
+  gross: number;
+  net: number;
+  existingMonthlyDebts: number;
+  owedBalance: number;           // NEW
+  applyMinPctFromBalance: boolean; // NEW toggle
+  dependants: number;
+  requestedServiceFee: number;
+};
+
+function currency(n: number) {
+  if (!isFinite(n)) return "R 0.00";
+  return n.toLocaleString("en-ZA", { style: "currency", currency: "ZAR", minimumFractionDigits: 2 });
+}
+
+export default function LoanToolPage() {
+  const [f, setF] = React.useState<Form>({
+    amount: 100000,
+    term: 36,
+    aprNominal: 0.24,
+    gross: 25000,
+    net: 20000,
+    existingMonthlyDebts: 1500,
+    owedBalance: 0,                // NEW
+    applyMinPctFromBalance: true,  // NEW
+    dependants: 0,
+    requestedServiceFee: 69,
+  });
+
+  // Assumed minimum payment derived from outstanding exposure (e.g. credit cards)
+  const minPct = DEFAULT_MIN_PCT; // or read from your config if you export it
+  const assumedMinFromBalance = f.applyMinPctFromBalance ? Math.max(0, f.owedBalance * minPct) : 0;
+
+  // Apply service fee cap
+  const svc = serviceFeeMonthly(f.requestedServiceFee);
+
+  // Clamp APR to unsecured cap
+  const aprCapped = clampRateToCap(f.aprNominal, "unsecured");
+  const r = monthlyRate(aprCapped);
+
+  // Base instalment (interest component only; service fee added after)
+  const basePMT = pmt(f.amount, r, f.term);
+  const monthlyInstalment = basePMT + svc;
+
+  // Affordability: add assumed min payment on owed balance to declared existing debts
+  const existingDebtsFinal = f.existingMonthlyDebts + assumedMinFromBalance;
+
+  const disposable = di(f.net, /* declared expenses */ 0, existingDebtsFinal, f.gross, f.dependants);
+  const affordable = monthlyInstalment <= disposable;
+
+  const dti = dtiAfter(f.gross, existingDebtsFinal, monthlyInstalment);
+
+  // Exposure ratio (soft policy indicator)
+  const exposureRatio = f.owedBalance > 0 && f.gross > 0 ? (f.owedBalance / f.gross) : 0;
+
+  // Decision badges
+  const dtiBand = dti < 0.35 ? "Low" : dti < 0.5 ? "Moderate" : "High";
+  const decision =
+    !affordable ? "Declined – fails affordability" :
+    dti >= 0.55 ? "Declined – DTI too high" :
+    "Approved / Borderline depending on policy";
+
+  return (
+    <div className="space-y-10">
+      {/* Header */}
+      <section className="rounded-2xl bg-gradient-to-br from-[var(--scend-pink-50)] via-white to-white p-8 shadow-sm md:p-12">
+        <div className="max-w-3xl">
+          <h1 className="text-3xl font-bold text-[var(--scend-gray-900)] md:text-4xl">Loan Tool</h1>
+          <p className="mt-3 text-[15px] text-[var(--scend-gray-700)] leading-relaxed">
+            Fully compliant affordability with APR cap checks, fees, disposable-income test, and DTI.
+            Includes outstanding exposure and an optional assumed minimum payment from balance.
+          </p>
+        </div>
+      </section>
+
+      {/* Form + Results */}
+      <section className="grid gap-6 md:grid-cols-2">
+        {/* Form */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-[var(--scend-gray-200)]/70 md:p-8">
+          <h2 className="text-lg font-semibold text-[var(--scend-gray-900)]">Application details</h2>
+
+          <div className="mt-5 grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-[15px] text-[var(--scend-gray-900)]">
+                Loan amount (R)
+                <input
+                  type="number" min={0} className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] px-3 py-2 text-[15px]"
+                  value={f.amount} onChange={e=>setF(v=>({...v, amount: Number(e.target.value)}))}
+                />
+              </label>
+              <label className="text-[15px] text-[var(--scend-gray-900)]">
+                Term (months)
+                <input
+                  type="number" min={1} className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] px-3 py-2 text-[15px]"
+                  value={f.term} onChange={e=>setF(v=>({...v, term: Number(e.target.value)}))}
+                />
+              </label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-[15px] text-[var(--scend-gray-900)]">
+                Proposed APR (annual)
+                <input
+                  type="number" step="0.01" min={0} max={1} className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] px-3 py-2 text-[15px]"
+                  value={f.aprNominal} onChange={e=>setF(v=>({...v, aprNominal: Number(e.target.value)}))}
+                />
+                <span className="mt-1 block text-[12px] text-[var(--scend-gray-700)]">Will be capped at {Math.round(caps.unsecured.maxAPR*10000)/100}%</span>
+              </label>
+
+              <label className="text-[15px] text-[var(--scend-gray-900)]">
+                Service fee (monthly, R)
+                <input
+                  type="number" min={0} className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] px-3 py-2 text-[15px]"
+                  value={f.requestedServiceFee} onChange={e=>setF(v=>({...v, requestedServiceFee: Number(e.target.value)}))}
+                />
+                <span className="mt-1 block text-[12px] text-[var(--scend-gray-700)]">Clamped to cap automatically</span>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <label className="text-[15px] text-[var(--scend-gray-900)]">
+                Gross income (R)
+                <input
+                  type="number" min={0} className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] px-3 py-2 text-[15px]"
+                  value={f.gross} onChange={e=>setF(v=>({...v, gross: Number(e.target.value)}))}
+                />
+              </label>
+              <label className="text-[15px] text-[var(--scend-gray-900)]">
+                Net income (R)
+                <input
+                  type="number" min={0} className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] px-3 py-2 text-[15px]"
+                  value={f.net} onChange={e=>setF(v=>({...v, net: Number(e.target.value)}))}
+                />
+              </label>
+              <label className="text-[15px] text-[var(--scend-gray-900)]">
+                Existing monthly debts (R)
+                <input
+                  type="number" min={0} className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] px-3 py-2 text-[15px]"
+                  value={f.existingMonthlyDebts} onChange={e=>setF(v=>({...v, existingMonthlyDebts: Number(e.target.value)}))}
+                />
+              </label>
+            </div>
+
+            {/* NEW: outstanding exposure */}
+            <div className="grid grid-cols-3 gap-3">
+              <label className="text-[15px] text-[var(--scend-gray-900)]">
+                Current owed balance (R)
+                <input
+                  type="number" min={0} className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] px-3 py-2 text-[15px]"
+                  value={f.owedBalance} onChange={e=>setF(v=>({...v, owedBalance: Number(e.target.value)}))}
+                />
+              </label>
+              <label className="col-span-2 flex items-end gap-2 text-[15px] text-[var(--scend-gray-900)]">
+                <input
+                  type="checkbox" className="h-4 w-4"
+                  checked={f.applyMinPctFromBalance}
+                  onChange={e=>setF(v=>({...v, applyMinPctFromBalance: e.target.checked}))}
+                />
+                <span>Apply assumed min payment from balance ({Math.round(minPct*100)}%)</span>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-[15px] text-[var(--scend-gray-900)]">
+                Dependants
+                <input
+                  type="number" min={0} className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] px-3 py-2 text-[15px]"
+                  value={f.dependants} onChange={e=>setF(v=>({...v, dependants: Number(e.target.value)}))}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Results */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-[var(--scend-gray-200)]/70 md:p-8">
+          <h2 className="text-lg font-semibold text-[var(--scend-gray-900)]">Results</h2>
+          <div className="mt-4 grid gap-2 text-[15px]">
+            <div className="flex items-center justify-between"><span>APR (capped)</span><span>{(aprCapped*100).toFixed(2)}%</span></div>
+            <div className="flex items-center justify-between"><span>Service fee (applied)</span><span>{currency(svc)}</span></div>
+            <div className="flex items-center justify-between"><span>Base instalment (excl. service)</span><span>{currency(basePMT)}</span></div>
+            <div className="flex items-center justify-between font-semibold"><span>Monthly instalment</span><span>{currency(monthlyInstalment)}</span></div>
+
+            {/* NEW: owed balance contribution */}
+            <div className="flex items-center justify-between"><span>Assumed min from owed balance</span><span>{currency(assumedMinFromBalance)}</span></div>
+            <div className="flex items-center justify-between"><span>Existing debts (final)</span><span>{currency(existingDebtsFinal)}</span></div>
+
+            <div className="flex items-center justify-between"><span>Disposable income</span><span>{currency(disposable)}</span></div>
+            <div className="flex items-center justify-between"><span>DTI (post-loan)</span><span>{(dti*100).toFixed(1)}% <em className="text-[13px] text-[var(--scend-gray-700)]">({dtiBand})</em></span></div>
+            <div className="flex items-center justify-between"><span>Exposure ratio (owed ÷ gross)</span><span>{(exposureRatio*100).toFixed(1)}%</span></div>
+
+            <div className="mt-3 rounded-xl bg-[var(--scend-pink-50)]/60 px-3 py-2 text-[15px]">
+              <strong>Decision: </strong>{decision}
+            </div>
+
+            <div className="mt-2 text-[14px] text-[var(--scend-gray-700)]">
+              <ul className="list-disc pl-5 space-y-1">
+                {!affordable && <li>Reduce amount or extend term to pass affordability.</li>}
+                {dti >= 0.55 && <li>High DTI. Pay down debts or lower amount before applying.</li>}
+                {exposureRatio > 1 && <li>Outstanding exposure exceeds monthly gross income — expect stricter underwriting.</li>}
+                {assumedMinFromBalance > 0 && <li>We assumed {Math.round(minPct*100)}% of your owed balance as a minimum monthly payment. Untick the toggle if already included in “Existing monthly debts”.</li>}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

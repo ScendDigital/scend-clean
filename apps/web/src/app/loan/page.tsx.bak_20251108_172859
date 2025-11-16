@@ -1,0 +1,3 @@
+﻿import LoanTool from "../../components/loan/LoanTool";
+export const metadata = { title: "Scend Loan Tool", description: "Educational loan affordability & compliance analysis (NCA-aligned)." };
+export default function Page(){ return <LoanTool/>; }

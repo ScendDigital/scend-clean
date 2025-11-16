@@ -1,0 +1,12 @@
+﻿export default function Page() {
+  return (
+    <main className="mx-auto max-w-3xl p-6">
+      <h1 className="mb-4 text-2xl font-bold">Scend Tools</h1>
+      <ul className="list-disc pl-6">
+        <li><a className="text-pink-600" href="/loan">Loan Tool</a></li>
+        <li><a className="text-pink-600" href="/tax">Tax Tool</a></li>
+        <li><a className="text-pink-600" href="/uif">UIF Tool</a></li>
+      </ul>
+    </main>
+  );
+}

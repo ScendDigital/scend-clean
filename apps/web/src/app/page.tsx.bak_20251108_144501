@@ -1,0 +1,50 @@
+﻿import Link from "next/link";
+
+function Card({title,desc,href}:{title:string;desc:string;href:string}){
+  return (
+    <Link href={href} className="group block rounded-2xl border border-[var(--scend-gray-200)] bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-sm">
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-semibold text-[var(--scend-gray-900)]">{title}</h3>
+        <span className="rounded-full border border-[var(--scend-pink-100)] bg-[var(--scend-pink-50)] px-2 py-0.5 text-xs font-medium text-[var(--scend-pink-700)] opacity-0 transition group-hover:opacity-100">Open</span>
+      </div>
+      <p className="mt-2 text-sm text-[var(--scend-gray-700)]">{desc}</p>
+    </Link>
+  );
+}
+
+export default function Home(){
+  return (
+    <div className="space-y-12">
+      <section className="relative overflow-hidden rounded-2xl border border-[var(--scend-gray-200)] bg-gradient-to-br from-[var(--scend-pink-50)] via-white to-white p-8 md:p-12">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold tracking-wider text-[var(--scend-pink-700)]">SCEND TOOLS</p>
+          <h1 className="mt-2 text-3xl font-bold text-[var(--scend-gray-900)] md:text-4xl">Smart, compliant financial tools for South Africa</h1>
+          <p className="mt-3 text-[15px] text-[var(--scend-gray-700)]">Accurate estimates and clear explanations — built with local rules in mind (SARS, UIF, NCA).</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/loan" className="glow rounded-2xl bg-[var(--scend-pink-600)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--scend-pink-700)]">Try Loan Tool</Link>
+            <Link href="/tax" className="glow rounded-2xl border border-[var(--scend-gray-200)] px-4 py-2 text-sm font-semibold text-[var(--scend-gray-900)] hover:bg-[var(--scend-gray-100)]">Try Tax Tool</Link>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-semibold text-[var(--scend-gray-900)]">What you get</h2>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card title="Loan Tool" desc="Affordability, DTI, NCA caps, approval likelihood & export to PDF." href="/loan" />
+          <Card title="Tax Tool" desc="SARS 2024/2025 tables, medical credits & clear breakdown." href="/tax" />
+          <Card title="UIF Tool" desc="Credits, benefit days and amounts with education-first design." href="/uif" />
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-[var(--scend-gray-200)] bg-white p-8 md:p-10">
+        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+          <div>
+            <h3 className="text-lg font-semibold text-[var(--scend-gray-900)]">Bring Scend to your team</h3>
+            <p className="mt-1 text-sm text-[var(--scend-gray-700)]">We can brand, host and support these tools for your organisation.</p>
+          </div>
+          <Link href="/contact" className="glow rounded-2xl bg-[var(--scend-pink-600)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--scend-pink-700)]">Contact us</Link>
+        </div>
+      </section>
+    </div>
+  );
+}

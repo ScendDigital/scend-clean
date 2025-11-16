@@ -1,0 +1,17 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --scend-pink: #ec4899;
+  --scend-pink-700: #be185d;
+  --scend-gray-900: #111827;
+  --scend-gray-700: #374151;
+  --scend-gray-200: #e5e7eb;
+  --scend-gray-100: #f3f4f6;
+}
+html, body { height: 100%; }
+body { @apply bg-white text-gray-900 antialiased; }
+a { @apply text-pink-700 hover:underline; }
+.btn { @apply inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold; }
+.btn-primary { @apply border border-pink-500 text-pink-600 hover:bg-pink-50; }
