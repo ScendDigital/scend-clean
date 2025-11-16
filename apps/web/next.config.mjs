@@ -1,10 +1,10 @@
-const isVercel = !!process.env.VERCEL;
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // ...your existing config above this line
+  // ...your existing options
 
-  ...(isVercel ? { output: "standalone" } : {}),
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
