@@ -202,12 +202,6 @@ function clamp01(n: number) {
 /* ------------------------------------------------------------------ */
 
 export default function TaxTool() {
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const [f, setF] = React.useState<Inputs>({
     year: "2025/26",
     mode: "Yearly",
@@ -250,6 +244,7 @@ export default function TaxTool() {
         retirementAnnuityAnnual: Math.max(0, (v.retirementAnnuityMonthly || 0) * 12),
       }));
     }
+
   }, [f.mode]);
 
   const markDirty =
@@ -466,24 +461,6 @@ export default function TaxTool() {
   /* ------------------------------------------------------------------
      UI — Premium look & feel (matching LoanTool)
      ------------------------------------------------------------------ */
-
-  if (!mounted) {
-    return (
-      <div className="space-y-8">
-        <section className="rounded-3xl bg-gradient-to-br from-pink-50 via-white to-white p-8 shadow-sm ring-1 ring-gray-200/60">
-          <div className="max-w-3xl">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
-              Scend Tax Tool
-            </h1>
-            <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
-              Loading tax calculator…
-            </p>
-          </div>
-        </section>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       {/* Premium header */}
@@ -855,4 +832,5 @@ export default function TaxTool() {
     </div>
   );
 }
+
 

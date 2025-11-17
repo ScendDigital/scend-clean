@@ -1,137 +1,140 @@
 ﻿"use client";
 
-import * as React from "react";
-import Link from "next/link";
+import React, { useState, useEffect } from "react";
+import { FiUser, FiMail, FiPhone, FiMessageSquare, FiSend } from "react-icons/fi";
 
-export default function ContactUs() {
-  // Simple mail composer (client-side)
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+export default function ContactPage() {
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  // ⭐ Prevent hydration mismatch
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true);
+
     const form = e.currentTarget;
-    const data = new FormData(form);
-    const name = String(data.get("name") || "").trim();
-    const email = String(data.get("email") || "").trim();
-    const topic = String(data.get("topic") || "General");
-    const message = String(data.get("message") || "").trim();
+    const data = {
+      name: form.name.value,
+      email: form.email.value,
+      phone: form.phone.value,
+      message: form.message.value,
+    };
 
-    if (!name || !email || !message) {
-      alert("Please fill in your name, email, and message.");
-      return;
-    }
+    const response = await fetch("https://formspree.io/f/mvgvpvve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(data),
+    });
 
-    const to = ["motlatsi.lenyatsa@gmail.com", "thatosebatjane@yahoo.com"].join(",");
-    const subject = encodeURIComponent(`[Scend Contact] ${topic} — ${name}`);
-    const body = encodeURIComponent(
-      `Name: ${name}\nEmail: ${email}\nTopic: ${topic}\n\n${message}\n\n— Sent from scend.co.za`
-    );
-    window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
-  }
+    if (response.ok) {
+      setSent(true);
+      form.reset();
+    } else alert("Something went wrong.");
+
+    setLoading(false);
+  };
 
   return (
-    <div className="space-y-12">
-      {/* Header */}
-      <section className="rounded-2xl bg-gradient-to-br from-[var(--scend-pink-50)] via-white to-white p-8 shadow-sm md:p-12">
-        <div className="max-w-3xl">
-          <h1 className="text-3xl font-bold text-[var(--scend-gray-900)] md:text-4xl">Contact Us</h1>
-          <p className="mt-3 text-[15px] text-[var(--scend-gray-700)] leading-relaxed">
-            We’d love to hear from you. Whether you’re exploring our financial tools, publishing services,
-            or general enquiries — drop us a message and we’ll get back to you soon.
-          </p>
-        </div>
-      </section>
+    <div className="min-h-screen flex justify-center items-center px-4 py-16 bg-gradient-to-b from-white via-pink-50/40 to-white">
 
-      {/* Form and WhatsApp */}
-      <section className="grid gap-6 md:grid-cols-2">
-        {/* Send Message Form */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-[var(--scend-gray-200)]/70 md:p-8">
-          <h2 className="text-lg font-semibold text-[var(--scend-gray-900)]">Send a message</h2>
-          <p className="mt-1 text-[15px] text-[var(--scend-gray-700)]">
-            Your message will open in your email app addressed to our team.
-          </p>
+      {/* PREMIUM SCEND PINK CONTAINER WITH ROUNDED CORNERS */}
+      <div className="
+        w-full max-w-3xl
+        bg-gradient-to-br from-pink-50 via-white to-pink-100/70
+        backdrop-blur-xl
+        border border-pink-200
+        rounded-[40px]
+        shadow-[0_8px_30px_rgba(236,72,153,0.25)]
+        p-10
+      ">
 
-          <form onSubmit={onSubmit} className="mt-5 space-y-4">
-            <div>
-              <label className="block text-[15px] font-medium text-[var(--scend-gray-900)]">Full name</label>
-              <input
-                name="name"
-                type="text"
-                required
-                className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] bg-white px-3 py-2 text-[15px] outline-none focus:ring-2 focus:ring-[var(--scend-pink-100)]"
-                placeholder="Your name"
-              />
-            </div>
+        <h1 className="text-4xl font-extrabold text-center mb-2 text-pink-600 tracking-tight">
+          Contact Us
+        </h1>
 
-            <div>
-              <label className="block text-[15px] font-medium text-[var(--scend-gray-900)]">Email</label>
-              <input
-                name="email"
-                type="email"
-                required
-                className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] bg-white px-3 py-2 text-[15px] outline-none focus:ring-2 focus:ring-[var(--scend-pink-100)]"
-                placeholder="you@example.com"
-              />
-            </div>
+        <p className="text-center text-gray-600 mb-8 text-sm">
+          We’re here to assist you. Kindly share your details below.
+        </p>
 
-            <div>
-              <label className="block text-[15px] font-medium text-[var(--scend-gray-900)]">Topic</label>
-              <select
-                name="topic"
-                className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] bg-white px-3 py-2 text-[15px] outline-none focus:ring-2 focus:ring-[var(--scend-pink-100)]"
-                defaultValue="General"
-              >
-                <option>General</option>
-                <option>Loan Tool</option>
-                <option>Tax Tool</option>
-                <option>UIF Tool</option>
-                <option>Price Compare</option>
-                <option>Publishing</option>
-                <option>Partnership</option>
-                <option>Support</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-[15px] font-medium text-[var(--scend-gray-900)]">Message</label>
-              <textarea
-                name="message"
-                rows={5}
-                required
-                className="mt-1 w-full rounded-2xl border border-[var(--scend-gray-200)] bg-white px-3 py-2 text-[15px] outline-none focus:ring-2 focus:ring-[var(--scend-pink-100)]"
-                placeholder="How can we help?"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="glow rounded-2xl bg-[var(--scend-pink-600)] px-4 py-2 text-[15px] font-semibold text-white hover:bg-[var(--scend-pink-700)]"
-            >
-              Send message
-            </button>
-          </form>
-        </div>
-
-        {/* WhatsApp Section */}
-        <div className="rounded-2xl bg-[var(--scend-pink-50)]/60 p-6 shadow-sm ring-1 ring-[var(--scend-gray-200)]/70 md:p-8">
-          <h3 className="text-lg font-semibold text-[var(--scend-gray-900)]">Prefer WhatsApp?</h3>
-          <p className="mt-2 text-[15px] text-[var(--scend-gray-700)] leading-relaxed">
-            Send us a quick note — we’ll respond during business hours.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Link
-              href="https://wa.me/27728037223"
-              className="glow rounded-2xl bg-[var(--scend-pink-600)] px-4 py-2 text-[15px] font-semibold text-white hover:bg-[var(--scend-pink-700)]"
-            >
-              Message Motlatsi
-            </Link>
-            <Link
-              href="https://wa.me/27646519166"
-              className="glow rounded-2xl px-4 py-2 text-[15px] font-semibold text-[var(--scend-gray-900)] ring-1 ring-[var(--scend-gray-200)] hover:bg-[var(--scend-gray-100)]"
-            >
-              Message Thato
-            </Link>
+        {sent && (
+          <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-xl text-center font-medium">
+            Thank you! Your message has been sent.
           </div>
-        </div>
-      </section>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1 flex items-center gap-2">
+              <FiUser className="text-pink-600" /> Full Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              required
+              placeholder="Enter your full name"
+              className="w-full p-4 bg-white/60 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1 flex items-center gap-2">
+              <FiMail className="text-pink-600" /> Email Address
+            </label>
+            <input
+              type="email"
+              name="email"
+              required
+              placeholder="you@example.com"
+              className="w-full p-4 bg-white/60 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1 flex items-center gap-2">
+              <FiPhone className="text-pink-600" /> Phone Number
+            </label>
+            <input
+              type="text"
+              name="phone"
+              placeholder="+27 6X XXX XXXX"
+              className="w-full p-4 bg-white/60 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1 flex items-center gap-2">
+              <FiMessageSquare className="text-pink-600" /> Your Message
+            </label>
+            <textarea
+              name="message"
+              required
+              rows={5}
+              placeholder="How can we assist you?"
+              className="w-full p-4 bg-white/60 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition shadow-sm resize-none"
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-pink-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-pink-700 hover:shadow-pink-500/40 transition-all duration-300 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              "Sending..."
+            ) : (
+              <span className="flex items-center gap-2">
+                <FiSend /> Send Message
+              </span>
+            )}
+          </button>
+
+        </form>
+      </div>
     </div>
   );
 }

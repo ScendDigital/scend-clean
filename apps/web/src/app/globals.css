@@ -1,3 +1,25 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --scend-pink-50: #fdf2f8;
+  --scend-pink-100: #fce7f3;
+  --scend-pink-200: #fbcfe8;
+  --scend-pink-500: #ec4899;
+  --scend-pink-600: #db2777;
+  --scend-pink-700: #be185d;
+
+  --scend-gray-50: #f9fafb;
+  --scend-gray-100: #f3f4f6;
+  --scend-gray-200: #e5e7eb;
+  --scend-gray-700: #374151;
+  --scend-gray-800: #1f2933;
+  --scend-gray-900: #111827;
+
+  --scend-page: #f9fafb;
+}
+
 *,
 *::before,
 *::after {
@@ -12,6 +34,17 @@ body {
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: #f9fafb;
-  color: #111827;
+  background-color: var(--scend-page);
+  color: var(--scend-gray-900);
+}
+
+a {
+  text-decoration: none;
+}
+.scend-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }

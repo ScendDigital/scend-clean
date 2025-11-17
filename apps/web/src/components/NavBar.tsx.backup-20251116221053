@@ -1,0 +1,168 @@
+﻿"use client";
+
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+
+type NavItem = { label: string; href: string };
+
+const mainLinks: NavItem[] = [
+  { label: "Home", href: "/" },
+  { label: "Scend Publishing", href: "/publishing" },
+  { label: "Contact Us", href: "/contact" },
+  { label: "About Us", href: "/about" },
+];
+
+const toolLinks: NavItem[] = [
+  { label: "Loan Tool", href: "/loan" },
+  { label: "Tax Tool", href: "/tax" },
+  { label: "UIF Tool", href: "/uif" },
+];
+
+export default function NavBar() {
+  const pathname = usePathname() ?? "";
+  const [toolsOpen, setToolsOpen] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  const desktopLinkClasses = (href: string) =>
+    [
+      "relative text-sm font-medium transition-colors",
+      isActive(href)
+        ? "text-pink-600"
+        : "text-gray-800 hover:text-pink-600",
+    ].join(" ");
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur">
+      <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        {/* Left: logo + brand */}
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/scend-logo.png" // make sure this exists in /public
+            alt="Scend"
+            width={40}
+            height={40}
+            className="h-9 w-9 rounded-full object-contain"
+          />
+          <span className="text-xl font-extrabold tracking-tight text-pink-600">
+            Scend
+          </span>
+        </Link>
+
+        {/* Desktop navigation */}
+        <div className="hidden items-center gap-6 md:flex">
+          {/* Main links with subtle underline on active */}
+          {mainLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={desktopLinkClasses(link.href)}
+            >
+              {link.label}
+              {isActive(link.href) && (
+                <span className="absolute inset-x-0 -bottom-1 h-[2px] rounded-full bg-pink-600" />
+              )}
+            </Link>
+          ))}
+
+          {/* Scend Tools dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setToolsOpen((o) => !o)}
+              onBlur={() => setTimeout(() => setToolsOpen(false), 150)}
+              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                toolLinks.some((t) => isActive(t.href))
+                  ? "border-pink-500 bg-pink-50 text-pink-700"
+                  : "border-gray-200 bg-white text-gray-800 hover:border-pink-300 hover:text-pink-600"
+              }`}
+            >
+              <span>Scend Tools</span>
+              <span className="text-xs">▾</span>
+            </button>
+
+            {toolsOpen && (
+              <div className="absolute right-0 mt-2 w-44 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
+                {toolLinks.map((tool, idx) => (
+                  <Link
+                    key={tool.href}
+                    href={tool.href}
+                    className={[
+                      "block px-4 py-2 text-sm transition-colors",
+                      isActive(tool.href)
+                        ? "bg-pink-50 text-pink-700 font-semibold"
+                        : "text-gray-800 hover:bg-pink-50 hover:text-pink-700",
+                      idx === 0 ? "rounded-t-2xl" : "",
+                      idx === toolLinks.length - 1 ? "rounded-b-2xl" : "",
+                    ].join(" ")}
+                  >
+                    {tool.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile: hamburger */}
+        <button
+          type="button"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:border-pink-300 hover:text-pink-600 md:hidden"
+          onClick={() => setMobileOpen((open) => !open)}
+        >
+          <span className="sr-only">Toggle navigation</span>
+          <div className="space-y-[5px]">
+            <span className="block h-[2px] w-4 rounded-full bg-current" />
+            <span className="block h-[2px] w-4 rounded-full bg-current" />
+          </div>
+        </button>
+      </nav>
+
+      {/* Mobile panel */}
+      {mobileOpen && (
+        <div className="border-t border-gray-200 bg-white md:hidden">
+          <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
+            {mainLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className={[
+                  "rounded-lg px-2 py-2 text-sm font-medium",
+                  isActive(link.href)
+                    ? "bg-pink-50 text-pink-700"
+                    : "text-gray-800 hover:bg-pink-50 hover:text-pink-700",
+                ].join(" ")}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            <div className="mt-2 text-xs font-semibold uppercase text-gray-500">
+              Scend Tools
+            </div>
+            {toolLinks.map((tool) => (
+              <Link
+                key={tool.href}
+                href={tool.href}
+                onClick={() => setMobileOpen(false)}
+                className={[
+                  "rounded-lg px-2 py-2 text-sm",
+                  isActive(tool.href)
+                    ? "bg-pink-50 text-pink-700"
+                    : "text-gray-800 hover:bg-pink-50 hover:text-pink-700",
+                ].join(" ")}
+              >
+                {tool.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

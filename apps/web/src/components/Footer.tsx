@@ -1,34 +1,45 @@
-﻿import Link from "next/link";
-
-export default function Footer() {
+﻿export default function Footer() {
   return (
-    <footer className="mt-10 border-t border-[var(--scend-gray-200)] bg-white/80">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-6 text-center text-[13px] text-[var(--scend-gray-600)] md:flex-row md:justify-between md:text-left">
-        <p>
-          Scend© 2025 Scend Pty Ltd. All rights reserved.
-        </p>
+    <footer className="w-full border-t border-pink-100 bg-white py-10 px-6">
 
-        <nav className="flex flex-wrap items-center justify-center gap-4 text-[13px]">
-          <Link href="/loan" className="hover:text-[var(--scend-pink-600)]">
-            Loan Tool
-          </Link>
-          <span className="text-[var(--scend-gray-400)]">•</span>
-          <Link href="/tax" className="hover:text-[var(--scend-pink-600)]">
-            Tax Tool
-          </Link>
-          <span className="text-[var(--scend-gray-400)]">•</span>
-          <Link href="/uif" className="hover:text-[var(--scend-pink-600)]">
-            UIF Tool
-          </Link>
-          <span className="text-[var(--scend-gray-400)]">•</span>
-          <Link
-            href="/contact"
-            className="hover:text-[var(--scend-pink-600)]"
-          >
-            Contact
-          </Link>
-        </nav>
+      <div className="max-w-6xl mx-auto flex flex-col items-center gap-10">
+
+        {/* QUICK LINKS — TOP CENTER */}
+        <div className="text-center text-[11px] text-gray-700">
+          <h3 className="text-sm font-semibold text-pink-600 mb-2">Quick Links</h3>
+
+          <div className="space-y-[2px]">
+            <div><a href="/" className="hover:text-pink-600 transition">Home</a></div>
+            <div><a href="/loan" className="hover:text-pink-600 transition">Loan Tool</a></div>
+            <div><a href="/tax" className="hover:text-pink-600 transition">Tax Tool</a></div>
+            <div><a href="/uif" className="hover:text-pink-600 transition">UIF Tool</a></div>
+            <div><a href="/price-compare" className="hover:text-pink-600 transition">Price Compare Tool</a></div>
+            <div><a href="/publishing" className="hover:text-pink-600 transition">Publishing</a></div>
+            <div><a href="/about" className="hover:text-pink-600 transition">About Us</a></div>
+            <div><a href="/contact" className="hover:text-pink-600 transition">Contact Us</a></div>
+          </div>
+        </div>
+
+        {/* ADDRESS — CENTER BELOW QUICK LINKS */}
+        <div className="text-center text-[11px] text-gray-700">
+          <h3 className="text-sm font-semibold text-pink-600 mb-2">Address</h3>
+
+          <div className="space-y-[2px]">
+            <div>11 Ulster Road</div>
+            <div>51 Mervlei Complex</div>
+            <div>Meredale</div>
+            <div>Johannesburg</div>
+            <div>2091</div>
+          </div>
+        </div>
+
       </div>
+
+      {/* COPYRIGHT */}
+      <div className="text-center text-gray-500 text-[11px] mt-10">
+        © {new Date().getFullYear()} Scend. All rights reserved.
+      </div>
+
     </footer>
   );
 }
