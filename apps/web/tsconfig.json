@@ -13,16 +13,11 @@
     "isolatedModules": true,
     "jsx": "preserve",
 
-    /* IMPORTANT FOR NEXT + VERCEL */
-    "baseUrl": "src",
+    "baseUrl": "./src",
     "paths": {
-      "@/*": ["*"],
-      "@/components/*": ["components/*"],
-      "@/app/*": ["app/*"],
-      "@/lib/*": ["lib/*"]
+      "@/*": ["*"]
     }
   },
-
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
 }
