@@ -9,3 +9,5 @@ export default function NavBar() {
     </nav>
   );
 }
+
+// vercel-rebuild
