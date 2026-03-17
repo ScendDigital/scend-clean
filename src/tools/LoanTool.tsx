@@ -1,3 +1,63 @@
+﻿//////////////////////////////////////////////////////////
+// ?? 2026 PRODUCTION LOAN LOGIC (Scend Upgrade)
+//////////////////////////////////////////////////////////
+
+const getInterestRate = (loanType: string, creditScore: number) => {
+  let baseRate = 0;
+
+  switch (loanType) {
+    case "Personal":
+      baseRate = 22;
+      break;
+    case "Vehicle":
+      baseRate = 14;
+      break;
+    case "Home":
+      baseRate = 10;
+      break;
+    case "Credit Card":
+      baseRate = 24;
+      break;
+    default:
+      baseRate = 20;
+  }
+
+  if (creditScore > 700) baseRate -= 2;
+  else if (creditScore < 550) baseRate += 3;
+
+  return Math.min(baseRate, 27.75); // NCA cap
+};
+
+const calculateMonthlyRepayment = (principal: number, annualRate: number, termMonths: number) => {
+  const monthlyRate = annualRate / 100 / 12;
+
+  if (monthlyRate === 0) return principal / termMonths;
+
+  return (
+    (principal * monthlyRate) /
+    (1 - Math.pow(1 + monthlyRate, -termMonths))
+  );
+};
+
+const calculateDTI = (income: number, existingDebt: number, repayment: number) => {
+  return ((existingDebt + repayment) / income) * 100;
+};
+
+const getRiskLevel = (dti: number) => {
+  if (dti < 30) return "Low";
+  if (dti < 45) return "Moderate";
+  if (dti < 55) return "High";
+  return "Declined";
+};
+
+const getDecision = (dti: number, repayment: number, disposableIncome: number) => {
+  if (repayment > disposableIncome) return "Declined";
+  if (dti > 55) return "Declined";
+  if (dti > 45) return "Borderline";
+  return "Approved";
+};
+
+//////////////////////////////////////////////////////////
 import { useMemo, useState } from "react";
 
 type LoanType = "Vehicle" | "Home" | "Personal" | "CreditCard";

@@ -1,11 +1,9 @@
-// src/app/loan/LoanToolClient.tsx
-"use client";
-
+ï»¿"use client";
 import dynamic from "next/dynamic";
 
-const LoanTool = dynamic(() => import("../../components/loan/LoanTool"), {
+const LoanTool = dynamic(() => import("../../tools/LoanTool"), {
   ssr: false,
-  loading: () => <div className="p-6 text-[15px] text-[var(--scend-gray-700)]">Loading Loan Tool…</div>,
+  loading: () => <div>Loading Loan Tool...</div>,
 });
 
 export default function LoanToolClient() {
