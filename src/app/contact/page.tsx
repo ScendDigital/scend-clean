@@ -1,4 +1,4 @@
-ï»¿"use client";
+"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -20,9 +20,9 @@ export default function ContactUs() {
     }
 
     const to = ["motlatsi.lenyatsa@gmail.com", "thatosebatjane@yahoo.com"].join(",");
-    const subject = encodeURIComponent(`[Scend Contact] ${topic} â€” ${name}`);
+    const subject = encodeURIComponent(`[Scend Contact] ${topic} — ${name}`);
     const body = encodeURIComponent(
-      `Name: ${name}\nEmail: ${email}\nTopic: ${topic}\n\n${message}\n\nâ€” Sent from scend.co.za`
+      `Name: ${name}\nEmail: ${email}\nTopic: ${topic}\n\n${message}\n\n— Sent from scend.co.za`
     );
     window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
   }
@@ -34,8 +34,8 @@ export default function ContactUs() {
         <div className="max-w-3xl">
           <h1 className="text-3xl font-bold text-[var(--scend-gray-900)] md:text-4xl">Contact Us</h1>
           <p className="mt-3 text-[15px] text-[var(--scend-gray-700)] leading-relaxed">
-            Weâ€™d love to hear from you. Whether youâ€™re exploring our financial tools, publishing services,
-            or general enquiries â€” drop us a message and weâ€™ll get back to you soon.
+            We’d love to hear from you. Whether you’re exploring our financial tools, publishing services,
+            or general enquiries — drop us a message and we’ll get back to you soon.
           </p>
         </div>
       </section>
@@ -114,7 +114,7 @@ export default function ContactUs() {
         <div className="rounded-2xl bg-[var(--scend-pink-50)]/60 p-6 shadow-sm ring-1 ring-[var(--scend-gray-200)]/70 md:p-8">
           <h3 className="text-lg font-semibold text-[var(--scend-gray-900)]">Prefer WhatsApp?</h3>
           <p className="mt-2 text-[15px] text-[var(--scend-gray-700)] leading-relaxed">
-            Send us a quick note â€” weâ€™ll respond during business hours.
+            Send us a quick note — we’ll respond during business hours.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link

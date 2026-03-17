@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 // 2024/25 SA personal tax brackets
 function annualTaxBeforeRebates(taxable: number){

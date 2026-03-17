@@ -1,4 +1,4 @@
-ï»¿import Link from "next/link";
+import Link from "next/link";
 
 type CardProps = {
   title: string;
@@ -38,9 +38,9 @@ export default function Home() {
             Welcome to Scend
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-[var(--scend-gray-700)]">
-            We craft clear, reliable tools that translate South Africaâ€™s
-            regulationsâ€”SARS tax, UIF benefits, and the National Credit
-            Actâ€”into decisions you can trust. Designed for real life. Built
+            We craft clear, reliable tools that translate South Africa’s
+            regulations—SARS tax, UIF benefits, and the National Credit
+            Act—into decisions you can trust. Designed for real life. Built
             for South Africans.
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function Home() {
           />
           <Card
             title="Price Compare"
-            desc="Compare everyday prices across retailers â€” live integrations coming soon."
+            desc="Compare everyday prices across retailers — live integrations coming soon."
             href="/price-compare"
           />
         </div>

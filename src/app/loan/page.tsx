@@ -1,4 +1,4 @@
-﻿// src/app/loan/page.tsx
+// src/app/loan/page.tsx
 import LoanToolClient from "./LoanToolClient";
 
 export const metadata = {

@@ -1,10 +1,10 @@
-﻿export type LoanType = "vehicle" | "home" | "personal" | "credit";
+export type LoanType = "vehicle" | "home" | "personal" | "credit";
 
 export interface LoanInput {
   type: LoanType;
   principal: number;        // total price
   deposit?: number;         // money down
-  balloonPct?: number;      // 0–100 (vehicle only)
+  balloonPct?: number;      // 0�100 (vehicle only)
   annualRatePct: number;    // raw rate input, will be capped
   termMonths: number;
   incomeMonthly: number;

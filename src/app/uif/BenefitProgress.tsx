@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 type Props = { creditDays: number };
 export default function BenefitProgress({ creditDays }: Props) {
   const maxDays = 365;

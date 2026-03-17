@@ -1,4 +1,4 @@
-﻿@"
+
 import React, { useState } from "react";
 
 interface Result {
@@ -215,4 +215,3 @@ const TaxTool: React.FC = () => {
 };
 
 export default TaxTool;
-"@ | Set-Content src\tools\TaxTool.tsx

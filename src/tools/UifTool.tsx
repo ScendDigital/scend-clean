@@ -1,4 +1,4 @@
-ï»¿// src/tools/UifTool.tsx
+// src/tools/UifTool.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -45,14 +45,14 @@ export default function UifTool() {
     // --- Simple UIF-style assumptions (you can refine later) ---
 
     // Credit days: approx 1 day for every 6 days worked
-    // Assume 30 days/month â†’ 30 * months / 6
+    // Assume 30 days/month ? 30 * months / 6
     // Cap at 365 days
     const calculatedCreditDays = Math.min(365, Math.floor((30 * months) / 6));
 
-    // Daily remuneration â‰ˆ (monthly * 12) / 365
+    // Daily remuneration ˜ (monthly * 12) / 365
     const dailyRemuneration = (salary * 12) / 365;
 
-    // UIF benefit between Â±38â€“60% of daily remuneration.
+    // UIF benefit between ±38–60% of daily remuneration.
     // Use conservative 38% for estimate.
     const benefitRate = 0.38;
     const calculatedDailyBenefit = dailyRemuneration * benefitRate;

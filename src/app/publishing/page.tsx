@@ -1,4 +1,4 @@
-import PublishingToolClient from "@/components/PublishingToolClient";
+import PublishingToolClient from "../../components/PublishingToolClient";
 
 export const metadata = {
   title: "Scend Publishing",

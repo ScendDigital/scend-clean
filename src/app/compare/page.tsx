@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 export default function PriceComparePage() {
   return (
@@ -12,7 +12,7 @@ export default function PriceComparePage() {
           This feature is currently under development.
         </p>
         <p className="text-gray-600 mt-2">
-          We’re building a smarter way to compare grocery and retail prices in South Africa.
+          We�re building a smarter way to compare grocery and retail prices in South Africa.
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">

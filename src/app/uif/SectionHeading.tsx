@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 type Props = { id?: string; title: string; subtitle?: string };
 export default function SectionHeading({ id, title, subtitle }: Props) {

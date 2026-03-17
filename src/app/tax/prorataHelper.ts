@@ -1,4 +1,4 @@
-﻿export type Mode = "year" | "month";
+export type Mode = "year" | "month";
 
 /**
  * Returns the gross amount that should feed into your PAYE engine,
