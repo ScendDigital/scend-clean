@@ -12,11 +12,11 @@ export default function UifPage() {
     <div className="min-h-screen flex justify-center px-4 py-16 bg-gradient-to-b from-white via-pink-50/40 to-white">
 
       {/* PREMIUM CONTAINER */}
-      <div className="w-full max-w-5xl bg-gradient-to-br from-pink-50 via-white to-pink-100/70 backdrop-blur-xl border border-pink-200 rounded-[40px] shadow-[0_10px_40px_rgba(236,72,153,0.25)] p-10 md:p-14 animate-fadeIn">
+      <div className="w-full  bg-gradient-to-br from-pink-50 via-white to-pink-100/70  border border-pink-200   p-10 md:p-14 animate-fadeIn">
 
         {/* HEADER */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-extrabold text-pink-600 tracking-tight drop-shadow-sm">
+          <h1 className="text-4xl font-extrabold text-pink-600 tracking-tight drop-
             UIF Tool
           </h1>
           <p className="text-gray-700 text-[15px] mt-2">
@@ -25,7 +25,7 @@ export default function UifPage() {
         </div>
 
         {/* TOOL + DISCLAIMER */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-pink-100 p-8 md:p-10">
+        <div className="bg-white/80    border border-pink-100 p-8 md:p-10">
 
           <UifTool />
 

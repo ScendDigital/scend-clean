@@ -9,8 +9,8 @@ export default function SectionHeading({ id, title, subtitle }: Props) {
         {subtitle && <p className="text-sm text-gray-600 mt-1">{subtitle}</p>}
       </div>
       <nav className="hidden md:flex items-center gap-2 text-sm text-gray-600">
-        <a className="px-3 py-1 rounded-full border border-gray-300 hover:bg-gray-100" href="#estimator">Estimator</a>
-        <a className="px-3 py-1 rounded-full border border-gray-300 hover:bg-gray-100" href="#documents">Documents</a>
+        <a className="px-3 py-1  border border-gray-300 hover:bg-gray-100" href="#estimator">Estimator</a>
+        <a className="px-3 py-1  border border-gray-300 hover:bg-gray-100" href="#documents">Documents</a>
       </nav>
     </div>
   );

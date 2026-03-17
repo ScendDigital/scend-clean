@@ -21,7 +21,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className="min-h-screen bg-[var(--scend-page)] text-[var(--scend-gray-900)]"
       ><NavBar />
-        <main className="mx-auto max-w-6xl px-4 py-8 md:py-10"><main className="min-h-screen">{children}</main></main>
+        <main className="  px-4 py-8 md:py-10"><main className="min-h-screen">{children}</main></main>
         <Footer />
       </body>
     </html>

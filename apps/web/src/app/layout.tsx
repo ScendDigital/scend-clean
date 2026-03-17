@@ -11,20 +11,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-white text-gray-900">
-
-        {/* NAV BAR */}
         <NavBar />
 
-        {/* PAGE WRAPPER (FIXED) */}
         <main className="px-4 py-6 flex flex-col items-center">
-          <div className="scend-container w-full">
+          <div className="w-full max-w-5xl mx-auto">
             {children}
           </div>
         </main>
 
-        {/* FOOTER */}
         <Footer />
-
       </body>
     </html>
   );

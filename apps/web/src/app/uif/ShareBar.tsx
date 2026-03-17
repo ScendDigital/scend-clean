@@ -33,7 +33,7 @@ export default function ShareBar({ message, className }: Props) {
     }
   }
 
-  const baseBtn = "px-3 py-2 rounded-2xl text-sm transition border";
+  const baseBtn = "px-3 py-2  text-sm transition border";
   const pinkBtn = baseBtn + " bg-pink-500 text-white hover:bg-pink-600 border-pink-500";
   const ghostBtn = baseBtn + " hover:bg-gray-100 border-gray-300";
 

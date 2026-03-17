@@ -55,9 +55,9 @@ export default function ContactPage() {
     <div className="min-h-screen flex justify-center items-center px-4 py-16 bg-gradient-to-b from-pink-50 via-white to-pink-50/40">
 
       {/* MAIN CARD */}
-      <div className="w-full max-w-3xl bg-white/90 backdrop-blur-2xl border border-pink-200 rounded-3xl shadow-[0_8px_40px_rgba(236,72,153,0.25)] p-10 animate-fadeIn">
+      <div className="w-full  bg-white/90  border border-pink-200   p-10 animate-fadeIn">
 
-        <h1 className="text-4xl font-extrabold text-center mb-2 text-pink-600 tracking-tight drop-shadow-sm">
+        <h1 className="text-4xl font-extrabold text-center mb-2 text-pink-600 tracking-tight drop-
           Contact Us
         </h1>
 
@@ -66,7 +66,7 @@ export default function ContactPage() {
         </p>
 
         {sent && (
-          <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-xl text-center font-medium">
+          <div className="mb-6 p-4 bg-green-100 text-green-700  text-center font-medium">
             Thank you! Your message has been sent.
           </div>
         )}
@@ -83,7 +83,7 @@ export default function ContactPage() {
               name="name"
               required
               placeholder="Enter your full name"
-              className="w-full p-4 bg-white/70 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition shadow-sm"
+              className="w-full p-4 bg-white/70  border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition 
             />
           </div>
 
@@ -97,7 +97,7 @@ export default function ContactPage() {
               name="email"
               required
               placeholder="you@example.com"
-              className="w-full p-4 bg-white/70 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition shadow-sm"
+              className="w-full p-4 bg-white/70  border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition 
             />
           </div>
 
@@ -110,7 +110,7 @@ export default function ContactPage() {
               type="text"
               name="phone"
               placeholder="+27 6X XXX XXXX"
-              className="w-full p-4 bg-white/70 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition shadow-sm"
+              className="w-full p-4 bg-white/70  border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition 
             />
           </div>
 
@@ -124,7 +124,7 @@ export default function ContactPage() {
               required
               rows={5}
               placeholder="How can we help?"
-              className="w-full p-4 bg-white/70 rounded-xl border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition shadow-sm resize-none"
+              className="w-full p-4 bg-white/70  border border-gray-300 focus:ring-2 focus:ring-pink-500 outline-none transition  resize-none"
             ></textarea>
           </div>
 
@@ -132,7 +132,7 @@ export default function ContactPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-pink-600 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-pink-700 hover:shadow-pink-500/40 transition-all duration-300 flex items-center justify-center gap-2"
+            className="w-full py-4 bg-pink-600 text-white text-lg font-bold   hover:bg-pink-700 hover: transition-all duration-300 flex items-center justify-center gap-2"
           >
             {loading ? (
               "Sending..."

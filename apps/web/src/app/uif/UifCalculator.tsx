@@ -56,7 +56,7 @@ export default function UifCalculator({ onCalculated }: Props) {
           <label className="block text-sm font-medium">Average Monthly Salary (ZAR)</label>
           <input
             inputMode="decimal"
-            className="mt-1 w-full rounded-2xl border px-3 py-2"
+            className="mt-1 w-full  border px-3 py-2"
             placeholder="e.g., 12500"
             value={avgMonthlySalary}
             onChange={(e) => setAvgMonthlySalary(e.target.value)}
@@ -67,7 +67,7 @@ export default function UifCalculator({ onCalculated }: Props) {
           <div className="flex gap-2 mt-1">
             <input
               inputMode="decimal"
-              className="w-full rounded-2xl border px-3 py-2"
+              className="w-full  border px-3 py-2"
               placeholder={inputType === "days" ? "e.g., 850" : "e.g., 36"}
               value={workedValue}
               onChange={(e) => setWorkedValue(e.target.value)}
@@ -75,7 +75,7 @@ export default function UifCalculator({ onCalculated }: Props) {
             <select
               value={inputType}
               onChange={(e) => setInputType(e.target.value as "days" | "months")}
-              className="rounded-2xl border px-2 py-1 text-sm"
+              className=" border px-2 py-1 text-sm"
             >
               <option value="days">Days</option>
               <option value="months">Months</option>
@@ -91,7 +91,7 @@ export default function UifCalculator({ onCalculated }: Props) {
           <label className="block text-sm font-medium">UIF Salary Cap (ZAR)</label>
           <input
             inputMode="decimal"
-            className="mt-1 w-full rounded-2xl border px-3 py-2"
+            className="mt-1 w-full  border px-3 py-2"
             value={salaryCap}
             onChange={(e) => setSalaryCap(e.target.value)}
           />
@@ -102,7 +102,7 @@ export default function UifCalculator({ onCalculated }: Props) {
       </div>
 
       {errors.length > 0 && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm">
+        <div className=" border border-red-200 bg-red-50 p-3 text-sm">
           <ul className="list-disc pl-5">
             {errors.map((er, i) => (
               <li key={i}>{er}</li>
@@ -114,7 +114,7 @@ export default function UifCalculator({ onCalculated }: Props) {
       <div className="flex items-center gap-3">
         <button
           onClick={onCalculate}
-          className="px-4 py-2 rounded-2xl shadow border bg-pink-500 text-white hover:bg-pink-600 border-pink-500"
+          className="px-4 py-2  shadow border bg-pink-500 text-white hover:bg-pink-600 border-pink-500"
         >
           Calculate
         </button>
@@ -130,7 +130,7 @@ export default function UifCalculator({ onCalculated }: Props) {
 
       {results && (
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="rounded-2xl border p-4">
+          <div className=" border p-4">
             <h3 className="text-lg font-semibold mb-2">Estimates</h3>
             <div className="space-y-1 text-sm">
               <p>Benefit rate: <strong>{(results.benefitRate * 100).toFixed(0)}%</strong></p>
@@ -140,7 +140,7 @@ export default function UifCalculator({ onCalculated }: Props) {
               <p>Monthly benefit (approx): <strong>{formatMoney(results.monthlyBenefitApprox)}</strong></p>
             </div>
           </div>
-          <div className="rounded-2xl border p-4">
+          <div className=" border p-4">
             <h3 className="text-lg font-semibold mb-2">Duration & Totals</h3>
             <div className="space-y-1 text-sm">
               <p>Credit days: <strong>{results.creditDays}</strong></p>
@@ -149,7 +149,7 @@ export default function UifCalculator({ onCalculated }: Props) {
             </div>
           </div>
           {showGuide && (
-            <div className="md:col-span-2 rounded-2xl border p-4 bg-gray-50">
+            <div className="md:col-span-2  border p-4 bg-gray-50">
               <h4 className="font-semibold mb-2">Continuation payments (after approval)</h4>
               <p className="text-sm">
                 Benefits are generally paid monthly. You may be asked to confirm that you are still unemployed

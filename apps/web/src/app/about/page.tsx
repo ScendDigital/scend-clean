@@ -11,7 +11,7 @@ export default function AboutUsPage() {
     <div className="min-h-screen flex justify-center px-4 py-16 bg-gradient-to-b from-white via-pink-50/40 to-white">
       
       {/* PREMIUM CONTAINER */}
-      <div className="w-full max-w-4xl bg-gradient-to-br from-pink-50 via-white to-pink-100/70 backdrop-blur-xl border border-pink-200 rounded-[40px] shadow-[0_8px_30px_rgba(236,72,153,0.25)] p-12 animate-fadeIn">
+      <div className="w-full  bg-gradient-to-br from-pink-50 via-white to-pink-100/70  border border-pink-200   p-12 animate-fadeIn">
 
         <h1 className="text-4xl font-extrabold text-center text-pink-600 mb-6 tracking-tight">
           About Us

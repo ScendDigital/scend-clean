@@ -1,9 +1,8 @@
-/** @type {import('next').NextConfig} */
+﻿/** @type {import("next").NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  turbopack: {
+    root: __dirname
+  }
 };
 
 module.exports = nextConfig;

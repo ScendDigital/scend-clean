@@ -8,7 +8,7 @@ export default function PaymentDuration({ results }: { results?: UifResults | nu
   const days = results.creditDays;
 
   return (
-    <div className="mt-8 p-4 rounded-2xl shadow">
+    <div className="mt-8 p-4  shadow">
       <h3 className="text-lg font-semibold mb-2">Estimated payment duration</h3>
       <p className="text-xl font-bold">{months.toFixed(1)} month(s) (≈ {days} days)</p>
       <p className="text-sm text-gray-600 mt-2">

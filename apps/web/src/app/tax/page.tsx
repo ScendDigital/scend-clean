@@ -1,46 +1,22 @@
 ﻿"use client";
 
-import React, { useEffect, useState } from "react";
-import TaxTool from "@/components/tax/TaxTool";
+import TaxTool from "@/tools/TaxTool";
 
-export default function TaxPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null; // Fix hydration mismatch
-
+export default function Page() {
   return (
-    <div className="min-h-screen flex justify-center px-4 py-16 bg-gradient-to-b from-white via-pink-50/40 to-white">
-
-      {/* PREMIUM SCEND CONTAINER */}
-      <div className="w-full max-w-5xl bg-gradient-to-br from-pink-50 via-white to-pink-100/70 backdrop-blur-xl border border-pink-200 rounded-[40px] shadow-[0_10px_40px_rgba(236,72,153,0.25)] p-10 md:p-14 animate-fadeIn">
-
-        {/* HEADER */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-extrabold text-pink-600 tracking-tight drop-shadow-sm">
-            Tax Tool
+    <div className="min-h-screen bg-gray-50 flex justify-center px-4 py-10">
+      <div className="w-full max-w-5xl">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Tax Explanation Tool
           </h1>
-          <p className="text-gray-700 text-[15px] mt-2">
-            SARS PAYE, rebates & medical credits explained clearly and visually.
+          <p className="mt-2 text-gray-600">
+            Understand how SARS calculated your tax
           </p>
-        </div>
+        </header>
 
-        {/* TOOL WRAPPER */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-pink-100 p-8 md:p-10">
-          <TaxTool />
-        </div>
-
+        <TaxTool />
       </div>
-
-      {/* FADE-IN ANIMATION */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out forwards;
-        }
-      `}</style>
     </div>
   );
 }

@@ -13,16 +13,16 @@ export default function PublishingPage() {
     <div className="min-h-screen flex justify-center px-4 py-16 bg-gradient-to-b from-white via-pink-50/40 to-white">
 
       {/* PREMIUM SCEND CONTAINER */}
-      <div className="w-full max-w-5xl bg-gradient-to-br from-pink-50 via-white to-pink-100/70 backdrop-blur-xl border border-pink-200 rounded-[40px] shadow-[0_10px_40px_rgba(236,72,153,0.25)] p-10 md:p-14 animate-fadeIn">
+      <div className="w-full  bg-gradient-to-br from-pink-50 via-white to-pink-100/70  border border-pink-200   p-10 md:p-14 animate-fadeIn">
 
         {/* HEADER */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-extrabold text-pink-600 tracking-tight drop-shadow-sm">Publishing Tool</h1>
+          <h1 className="text-4xl font-extrabold text-pink-600 tracking-tight drop- Tool</h1>
           <p className="text-gray-700 text-[15px] mt-2">Tools and guidance for authors and creators under the Scend Publishing umbrella.</p>
         </div>
 
         {/* CONTENT */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-pink-100 p-8 md:p-10 space-y-10">
+        <div className="bg-white/80    border border-pink-100 p-8 md:p-10 space-y-10">
 
           {/* SCEND PUBLISHING SECTION */}
           <section>
@@ -32,8 +32,8 @@ export default function PublishingPage() {
             </p>
 
             <div className="mt-4 flex flex-wrap gap-4">
-              <button className="px-6 py-3 rounded-xl bg-pink-600 text-white font-semibold hover:bg-pink-700 transition">Request publishing consult</button>
-              <button className="px-6 py-3 rounded-xl bg-white border border-pink-300 text-pink-600 font-semibold hover:bg-pink-50 transition">Download sample package</button>
+              <button className="px-6 py-3  bg-pink-600 text-white font-semibold hover:bg-pink-700 transition">Request publishing consult</button>
+              <button className="px-6 py-3  bg-white border border-pink-300 text-pink-600 font-semibold hover:bg-pink-50 transition">Download sample package</button>
             </div>
           </section>
 
@@ -43,7 +43,7 @@ export default function PublishingPage() {
             <p className="text-gray-700 leading-relaxed mb-6">These are guideline bundles. We customise based on your manuscript, budget, and where you are in your journey.</p>
 
             {/* STARTER */}
-            <div className="p-5 bg-white border border-pink-100 rounded-2xl shadow-sm">
+            <div className="p-5 bg-white border border-pink-100  
               <h3 className="text-xl font-semibold text-gray-900">Starter Edit</h3>
               <p className="text-gray-600 text-[14px] mt-2 mb-3">Ideal if your book is drafted but needs a professional clean-up and structure check.</p>
               <ul className="text-gray-700 text-[14px] space-y-1">
@@ -56,7 +56,7 @@ export default function PublishingPage() {
             </div>
 
             {/* SCEND AUTHOR */}
-            <div className="p-5 bg-pink-50 border border-pink-200 rounded-2xl shadow-sm">
+            <div className="p-5 bg-pink-50 border border-pink-200  
               <h3 className="text-xl font-semibold text-gray-900">Scend Author (Most popular)</h3>
               <p className="text-gray-600 text-[14px] mt-2 mb-3">Full service for authors who want a serious, professional book that can live on Amazon and local print.</p>
               <ul className="text-gray-700 text-[14px] space-y-1">
@@ -70,7 +70,7 @@ export default function PublishingPage() {
             </div>
 
             {/* EXPANDED */}
-            <div className="p-5 bg-white border border-pink-100 rounded-2xl shadow-sm">
+            <div className="p-5 bg-white border border-pink-100  
               <h3 className="text-xl font-semibold text-gray-900">Expanded & Legacy</h3>
               <p className="text-gray-600 text-[14px] mt-2 mb-3">For large or multi-format works such as expanded editions, workbooks, or content adapted for talks, TV or courses.</p>
               <ul className="text-gray-700 text-[14px] space-y-1">
@@ -105,7 +105,7 @@ export default function PublishingPage() {
               <p><span className="font-semibold">Current format:</span> Word document</p>
               <p><span className="font-semibold">Purpose:</span> heal a community, support talks, leave a legacy, etc.</p>
 
-              <button className="px-6 py-3 rounded-xl bg-pink-600 text-white font-semibold hover:bg-pink-700 transition">Send details to Scend</button>
+              <button className="px-6 py-3  bg-pink-600 text-white font-semibold hover:bg-pink-700 transition">Send details to Scend</button>
 
               <p className="text-gray-600 text-[13px]">You may also email us directly with your manuscript attached.</p>
 

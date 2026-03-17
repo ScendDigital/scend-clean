@@ -1,18 +1,29 @@
 ﻿import Link from "next/link";
 
-function Card({ title, desc, href }: { title: string; desc: string; href: string }) {
+type CardProps = {
+  title: string;
+  desc: string;
+  href: string;
+};
+
+function Card({ title, desc, href }: CardProps) {
   return (
     <Link
       href={href}
       className="group block rounded-2xl bg-white p-6 shadow-sm ring-1 ring-[var(--scend-gray-200)]/70 transition hover:-translate-y-0.5 hover:shadow-md hover:ring-[var(--scend-gray-200)]"
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-[15px] font-semibold text-[var(--scend-gray-900)]">{title}</h3>
+        <h3 className="text-[15px] font-semibold text-[var(--scend-gray-900)]">
+          {title}
+        </h3>
         <span className="rounded-full bg-[var(--scend-pink-50)] px-2 py-0.5 text-xs font-medium text-[var(--scend-gray-900)] opacity-0 transition group-hover:opacity-100">
           Open
         </span>
       </div>
-      <p className="mt-2 text-[15px] text-[var(--scend-gray-700)]">{desc}</p>
+
+      <p className="mt-2 text-[15px] text-[var(--scend-gray-700)]">
+        {desc}
+      </p>
     </Link>
   );
 }
@@ -20,22 +31,27 @@ function Card({ title, desc, href }: { title: string; desc: string; href: string
 export default function Home() {
   return (
     <div className="space-y-14">
-      {/* HERO — classy professional welcome */}
+      {/* HERO */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--scend-pink-50)] via-white to-white p-8 shadow-sm md:p-12">
         <div className="max-w-2xl">
           <h1 className="text-3xl font-bold text-[var(--scend-gray-900)] md:text-4xl">
             Welcome to Scend
           </h1>
-          <p className="mt-3 text-[15px] text-[var(--scend-gray-700)] leading-relaxed">
-            We craft clear, reliable tools that translate South Africa’s regulations—SARS tax, UIF benefits,
-            and the National Credit Act—into decisions you can trust. Designed for real life. Built for South Africans.
+          <p className="mt-3 text-[15px] leading-relaxed text-[var(--scend-gray-700)]">
+            We craft clear, reliable tools that translate South Africa’s
+            regulations—SARS tax, UIF benefits, and the National Credit
+            Act—into decisions you can trust. Designed for real life. Built
+            for South Africans.
           </p>
         </div>
       </section>
 
-      {/* FEATURES — What you get */}
+      {/* FEATURES */}
       <section>
-        <h2 className="mb-5 text-xl font-semibold text-[var(--scend-gray-900)]">What you get</h2>
+        <h2 className="mb-5 text-xl font-semibold text-[var(--scend-gray-900)]">
+          What you get
+        </h2>
+
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <Card
             title="Loan Tool"
@@ -62,16 +78,19 @@ export default function Home() {
 
       {/* CTA */}
       <section className="rounded-2xl bg-[var(--scend-pink-50)]/60 p-8 md:p-10">
-        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-[var(--scend-gray-900)]">Bring Scend to your team</h3>
+            <h3 className="text-lg font-semibold text-[var(--scend-gray-900)]">
+              Bring Scend to your team
+            </h3>
             <p className="mt-1 text-[15px] text-[var(--scend-gray-700)]">
               We can brand, host and support these tools for your organisation.
             </p>
           </div>
+
           <Link
             href="/contact"
-            className="glow rounded-2xl bg-[var(--scend-pink-600)] px-4 py-2 text-[15px] font-semibold text-white hover:bg-[var(--scend-pink-700)]"
+            className="glow rounded-2xl bg-[var(--scend-pink-600)] px-4 py-2 text-[15px] font-semibold text-white transition hover:bg-[var(--scend-pink-700)]"
           >
             Contact us
           </Link>
