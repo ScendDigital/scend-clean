@@ -126,7 +126,7 @@ export default function TaxTool() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-semibold">Scend • SARS PAYE</h1>
+      <h1 className="text-2xl font-semibold">Scend â€¢ SARS PAYE</h1>
 
       {/* Year & Mode */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -176,7 +176,7 @@ export default function TaxTool() {
 
       <label className="inline-flex items-center gap-2">
         <input type="checkbox" checked={deem80} onChange={(e) => setDeem80(e.target.checked)} />
-        <span>Employer deems ≥80% business use (20% taxable for PAYE)</span>
+        <span>Employer deems â‰¥80% business use (20% taxable for PAYE)</span>
       </label>
 
       {/* Retirement & PAYE paid */}
@@ -221,7 +221,7 @@ export default function TaxTool() {
         {mode === "Annual" && (
           <>
             <label className="block">
-              <div className="text-sm font-medium mb-1">Months Covered (1–12)</div>
+              <div className="text-sm font-medium mb-1">Months Covered (1â€“12)</div>
               <input className="border rounded p-2 w-full" placeholder="12" value={months} onChange={(e) => setMonths(e.target.value)} />
             </label>
 
@@ -246,7 +246,7 @@ export default function TaxTool() {
         </label>
       </div>
 
-      {/* Pro-rata controls – per mode */}
+      {/* Pro-rata controls â€“ per mode */}
       {mode === "Annual" ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <label className="inline-flex items-center gap-2">
@@ -294,7 +294,7 @@ export default function TaxTool() {
       {result && (
         <div className="mt-6 border rounded p-4">
           <div className="text-lg font-semibold mb-2">
-            {mode === "Annual" ? `Breakdown (${result.taxYear}) • Annual` : `Breakdown (${result.taxYear}) • Monthly`}
+            {mode === "Annual" ? `Breakdown (${result.taxYear}) â€¢ Annual` : `Breakdown (${result.taxYear}) â€¢ Monthly`}
           </div>
 
           {/* ID/Rebate note */}
@@ -305,7 +305,7 @@ export default function TaxTool() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
-            <div>Age (from ID): <strong>{result.idProvided ? result.age : "—"}</strong></div>
+            <div>Age (from ID): <strong>{result.idProvided ? result.age : "â€”"}</strong></div>
             <div>Months covered: <strong>{result.monthsCovered}</strong></div>
 
             {mode === "Annual" ? (
@@ -321,7 +321,7 @@ export default function TaxTool() {
                 <div>Annual tax after credits: <strong>{ZAR.format(result.taxAfterCredits)}</strong></div>
                 {partialYearByDays && (
                   <div>
-                    Annual tax (pro-rated by days × {result.annualProrationFactorDays.toFixed(3)}):{" "}
+                    Annual tax (pro-rated by days Ã— {result.annualProrationFactorDays.toFixed(3)}):{" "}
                     <strong>{ZAR.format(result.annualTaxProratedDays)}</strong>
                   </div>
                 )}
@@ -345,7 +345,7 @@ export default function TaxTool() {
           <div className="mt-3 text-sm text-gray-600">
             {mode === "Annual"
               ? "Notes: Annual view uses full-year figures. Annual pro-rata (if selected) scales the final annual tax by your employed days in the tax year. Medical credits follow SARS monthly rules."
-              : "Notes: Monthly view accepts per-month figures and annualises them under the hood. Monthly PAYE excludes AMTC (assessment-only) and includes the monthly MTC. Day-based pro-rata scales this month’s PAYE by worked-days/period-days."}
+              : "Notes: Monthly view accepts per-month figures and annualises them under the hood. Monthly PAYE excludes AMTC (assessment-only) and includes the monthly MTC. Day-based pro-rata scales this monthâ€™s PAYE by worked-days/period-days."}
           </div>
         </div>
       )}

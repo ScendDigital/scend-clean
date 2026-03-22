@@ -1,4 +1,4 @@
-﻿export type LoanType = "vehicle" | "home" | "personal" | "credit";
+export type LoanType = "vehicle" | "home" | "personal" | "credit";
 
 export interface LoanInput {
   type: LoanType;

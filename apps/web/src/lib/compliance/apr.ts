@@ -1,4 +1,4 @@
-﻿/**
+/**
  * apr.ts
  * Payment math + Effective APR (IRR) including compulsory fees.
  * We compute monthly IRR on full cashflows and annualise: (1 + r_m)^12 - 1

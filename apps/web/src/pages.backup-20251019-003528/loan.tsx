@@ -1,4 +1,4 @@
-﻿import dynamic from "next/dynamic";
+import dynamic from "next/dynamic";
 const LoanTool = dynamic(() => import("../tools/LoanTool"), { ssr: false });
 export default function LoanPage(){
   return (

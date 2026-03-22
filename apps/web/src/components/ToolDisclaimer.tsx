@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 type Kind = "uif" | "tax" | "price" | "loan" | "generic";
 export default function ToolDisclaimer({ kind = "generic" }: { kind?: Kind }) {
   let text: React.ReactNode;

@@ -78,7 +78,7 @@ export function calculateAnnualPAYE(input: {
   retirementContribAnnual: number;  // ANNUAL
   medDependants: number;            // incl. main member
   medContributionMonthly: number;   // per month
-  monthsCovered: number;            // 1–12 (MTC/AMTC use)
+  monthsCovered: number;            // 1â€“12 (MTC/AMTC use)
   medOutOfPocketAnnual: number;     // qualifying OOP (ANNUAL)
   idNumber?: string;
   disabled?: boolean;

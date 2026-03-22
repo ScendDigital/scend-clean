@@ -1,4 +1,4 @@
-﻿// web/src/components/TaxTool.jsx
+// web/src/components/TaxTool.jsx
 "use client";
 
 import { useEffect, useState } from "react";

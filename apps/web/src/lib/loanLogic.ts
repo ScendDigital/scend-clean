@@ -1,4 +1,4 @@
-﻿export type LoanType = "personal" | "vehicle" | "home" | "credit_card";
+export type LoanType = "personal" | "vehicle" | "home" | "credit_card";
 export const NCA_MAX_APR = 27.75;
 
 export function parseZARNumber(input: unknown): number {

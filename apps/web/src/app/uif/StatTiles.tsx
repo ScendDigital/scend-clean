@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { Wallet, CalendarClock, Timer } from "lucide-react";
 import { formatMoney } from "./logic";
 

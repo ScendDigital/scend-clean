@@ -1,4 +1,4 @@
-﻿export const caps = {
+export const caps = {
   unsecured: { maxAPR: 0.2775 }, // 27.75% (policy cap; update if needed)
   vehicle: {
     maxAPR: 0.2775,

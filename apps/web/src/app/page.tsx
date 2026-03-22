@@ -1,3 +1,7 @@
-﻿export default function Page() {
-  return <div style={{ padding: 40 }}>Home OK</div>;
+﻿export default function Home() {
+  return (
+    <main className="p-10">
+      <h1 className="text-2xl font-bold">Welcome to Scend</h1>
+    </main>
+  );
 }

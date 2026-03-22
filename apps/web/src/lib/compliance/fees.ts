@@ -1,4 +1,4 @@
-﻿/**
+/**
  * fees.ts
  * Centralise fee caps & calculation helpers. Update these values from NCR fee schedules.
  * All amounts are ZAR. VAT handling is explicit.

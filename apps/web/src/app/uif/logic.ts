@@ -1,4 +1,4 @@
-﻿export type UifInputs = {
+export type UifInputs = {
   avgMonthlySalary: number;        // Average gross monthly salary (ZAR)
   daysWorkedLast48Months: number;  // Total work days in last 4 years
   salaryCap?: number;              // UIF salary cap (ZAR), overrideable

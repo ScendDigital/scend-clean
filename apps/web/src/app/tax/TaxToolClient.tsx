@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import dynamic from "next/dynamic";
 
 const TaxTool = dynamic(() => import("../../components/tax/TaxTool"), {

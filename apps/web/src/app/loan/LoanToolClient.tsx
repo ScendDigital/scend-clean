@@ -1,4 +1,4 @@
-﻿// src/app/loan/LoanToolClient.tsx
+// src/app/loan/LoanToolClient.tsx
 "use client";
 
 import dynamic from "next/dynamic";

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import LoanTool from "@/components/LoanTool";
 import ToolLayout from "@/components/ToolLayout";
