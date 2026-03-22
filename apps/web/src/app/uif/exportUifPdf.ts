@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { UifInputs, UifResults } from "./logic";
 
 export function exportUifPdf(inputs: UifInputs, results: UifResults) {
   const doc = new jsPDF({ unit: "pt" }); // points for nicer spacing
-  const title = "Scend — UIF Benefit Summary";
+  const title = "Scend â€” UIF Benefit Summary";
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
@@ -72,4 +72,5 @@ function formatMoney(v: number): string {
   if (!isFinite(v)) return "R 0.00";
   return "R " + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+
 

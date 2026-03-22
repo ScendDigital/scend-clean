@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 export default function UifDocs() {
   return (
@@ -11,15 +11,15 @@ export default function UifDocs() {
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <a className=" border p-4 hover:bg-gray-50" target="_blank"
            href="https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/UI19_employers%20declarations.pdf">
-          UI-19 — Employer Declaration (official PDF)
+          UI-19 â€” Employer Declaration (official PDF)
         </a>
         <a className=" border p-4 hover:bg-gray-50" target="_blank"
            href="https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/UI-2_8-authorisation-pay-benefits-into-banking-account.pdf">
-          UI-2.8 — Banking Details / Authorisation (official PDF)
+          UI-2.8 â€” Banking Details / Authorisation (official PDF)
         </a>
         <a className=" border p-4 hover:bg-gray-50" target="_blank"
            href="https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/UI-2-1_application-for-unemployment-benefits.pdf">
-          UI-2.1 — Application for Unemployment Benefits (official PDF)
+          UI-2.1 â€” Application for Unemployment Benefits (official PDF)
         </a>
         <a className=" border p-4 hover:bg-gray-50" target="_blank"
            href="https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/Salary%20Schedule%203.pdf">
@@ -33,3 +33,4 @@ export default function UifDocs() {
     </section>
   );
 }
+

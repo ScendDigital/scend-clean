@@ -1,4 +1,4 @@
-export type Mode = "year" | "month";
+﻿export type Mode = "year" | "month";
 
 /**
  * Returns the gross amount that should feed into your PAYE engine,
@@ -22,3 +22,4 @@ export function deriveGrossForCalc(params: {
   const factor = Math.max(0, Math.min(1, Number(daysWorked) / denom));
   return monthly * factor;
 }
+

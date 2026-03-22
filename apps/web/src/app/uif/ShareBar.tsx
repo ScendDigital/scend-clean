@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 
@@ -26,7 +26,7 @@ export default function ShareBar({ message, className }: Props) {
   async function tryNativeShare() {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "UIF Estimate — Scend", text: shareText, url });
+        await navigator.share({ title: "UIF Estimate â€” Scend", text: shareText, url });
       } catch { /* user cancelled */ }
     } else {
       window.open(waHref, "_blank");
@@ -46,3 +46,4 @@ export default function ShareBar({ message, className }: Props) {
     </div>
   );
 }
+

@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
 
-/* ──────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    UIF Rules (Dept of Labour fact-sheets, summarized)
 
    Unemployment:
@@ -12,7 +12,7 @@ import * as React from "react";
    - IRR% = 29.2 + (7173.92 / (232.92 + Y1))
    - Daily Benefit Amount (DBA) = Y1 * IRR%
    - Credits: 1 day credit for every 4 days worked (max 365 over 4 years)
-   - Total benefit ≈ DBA * credit days
+   - Total benefit â‰ˆ DBA * credit days
 
    Illness / Maternity / Adoption / Parental / RWT:
    - Benefit = 66% of income capped at UIF ceiling
@@ -23,7 +23,7 @@ import * as React from "react";
    - Lump-sum style; this tool provides forms & checklist, not a formula.
 
    These are approximations for guidance, not official determinations.
-   ────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 type ClaimType =
   | "Unemployment"
@@ -59,9 +59,9 @@ function irrPercentFromY1(y1Daily: number) {
   return 29.2 + 7173.92 / (232.92 + y1Daily);
 }
 
-/* ──────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Benefit calculators
-   ────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function calcUnemployment({
   avgMonthly,
@@ -119,9 +119,9 @@ function calcSixtySixPercentDaily({
   };
 }
 
-/* ──────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Forms & links
-   ────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 type Link = { label: string; href: string };
 
@@ -170,19 +170,19 @@ const LINKS: Record<string, Link[]> = {
   ],
   Dependants: [
     {
-      label: "UI-2.5: Dependant’s Benefits (Spouse / Life Partner) (PDF)",
+      label: "UI-2.5: Dependantâ€™s Benefits (Spouse / Life Partner) (PDF)",
       href: "https://www.labour.gov.za/DocumentCenter/Publications/Unemployment%20Insurance%20Fund/UI.2.5%20Form%20UI-2.5%20-%20Application%20for%20dependant%27s%20benefits%20by%20surviving%20spouse%20or%20life%20partner.pdf",
     },
     {
-      label: "UI-2.6: Dependant’s Benefits (Other Dependants / Children) (PDF)",
+      label: "UI-2.6: Dependantâ€™s Benefits (Other Dependants / Children) (PDF)",
       href: "https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/UI-2-6-dependants-benefits-other-than-spouse.pdf",
     },
   ],
 };
 
-/* ──────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Checklists per claim type
-   ────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 const CHECKLIST: Record<ClaimType, string[]> = {
   Unemployment: [
@@ -212,7 +212,7 @@ const CHECKLIST: Record<ClaimType, string[]> = {
     "ID/Passport",
     "UI-2.3 (Application for Maternity)",
     "UI-4 (Continuation of Maternity payments)",
-    "Child’s birth certificate or medical confirmation of due date",
+    "Childâ€™s birth certificate or medical confirmation of due date",
     "UI-2.8 (Bank details, stamped)",
     "UI-2.7 (if employer pays partial income)",
   ],
@@ -225,24 +225,24 @@ const CHECKLIST: Record<ClaimType, string[]> = {
   ],
   Parental: [
     "ID/Passport",
-    "Child’s birth certificate",
+    "Childâ€™s birth certificate",
     "Proof of parental leave from employer",
     "UI-2.8 (Bank details, stamped)",
     "UI-2.7 (if partial income)",
   ],
   "Dependants / Death": [
-    "Deceased’s ID / Passport",
+    "Deceasedâ€™s ID / Passport",
     "Death certificate",
     "UI-2.5 or UI-2.6 (depending on relationship)",
     "Proof of relationship (marriage certificate / birth certificate)",
     "UI-2.8 (Bank details of claimant, stamped)",
-    "Deceased’s UI-19 / employer confirmation if available",
+    "Deceasedâ€™s UI-19 / employer confirmation if available",
   ],
 };
 
-/* ──────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Component
-   ────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 export default function UifTool() {
   const [claimType, setClaimType] = React.useState<ClaimType>("Unemployment");
@@ -278,7 +278,7 @@ export default function UifTool() {
       });
       notes.push(
         "Unemployment: IRR formula applied with UIF ceiling applied to salary.",
-        "Credits = floor(days worked in last 4 years ÷ 4), capped at 365 days."
+        "Credits = floor(days worked in last 4 years Ã· 4), capped at 365 days."
       );
       setResult({ type: claimType, ...r, notes });
       setDirty(false);
@@ -337,7 +337,7 @@ export default function UifTool() {
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text(`Scend – UIF Estimate (${result.type})`, w / 2, 56, { align: "center" });
+    doc.text(`Scend â€“ UIF Estimate (${result.type})`, w / 2, 56, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Generated: ${new Date().toLocaleString()}`, w / 2, 72, { align: "center" });
@@ -422,7 +422,7 @@ export default function UifTool() {
       autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 16,
         styles: { fontSize: 10, cellPadding: 6, halign: "left" },
-        head: [[`${result.type} – Required documents`]],
+        head: [[`${result.type} â€“ Required documents`]],
         body: ck.map((c) => [c]),
         theme: "plain",
       });
@@ -566,7 +566,7 @@ export default function UifTool() {
                     }
                   />
                   <span className="mt-1 block text-[12px] text-gray-700">
-                    We’ll show an approximate payout for these months using ~30 days per month.
+                    Weâ€™ll show an approximate payout for these months using ~30 days per month.
                   </span>
                 </label>
                 <div className="text-[13px] text-gray-700 self-end">
@@ -616,7 +616,7 @@ export default function UifTool() {
                       }
                     />
                     <span className="mt-1 block text-[12px] text-gray-700">
-                      For planning; total payout = daily benefit × days actually approved.
+                      For planning; total payout = daily benefit Ã— days actually approved.
                     </span>
                   </label>
                 )}
@@ -662,7 +662,7 @@ export default function UifTool() {
               </button>
               {dirty && (
                 <span className="text-xs text-amber-600 self-center">
-                  Values changed — click <b>Calculate</b>.
+                  Values changed â€” click <b>Calculate</b>.
                 </span>
               )}
             </div>
@@ -793,7 +793,7 @@ export default function UifTool() {
             {checklist?.length ? (
               <>
                 <div className="mt-4 text-[15px] font-semibold">
-                  Required Documents – {claimType}
+                  Required Documents â€“ {claimType}
                 </div>
                 <ul className="list-disc pl-5 space-y-1 text-[14px]">
                   {checklist.map((c) => (
@@ -814,4 +814,5 @@ export default function UifTool() {
     </div>
   );
 }
+
 

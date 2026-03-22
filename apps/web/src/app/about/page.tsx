@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 
@@ -28,7 +28,7 @@ export default function AboutUsPage() {
           <span className="text-pink-600 font-semibold">
             heal the nation through information, empowerment, and innovation.
           </span>{" "}
-          We believe meaningful change begins with access — access to the right tools, support, and knowledge that allow
+          We believe meaningful change begins with access â€” access to the right tools, support, and knowledge that allow
           individuals and families to make informed decisions.
         </p>
 
@@ -39,7 +39,7 @@ export default function AboutUsPage() {
         <ul className="text-gray-700 leading-relaxed space-y-4 text-[15px] mb-10">
           <li>
             <span className="text-pink-600 font-semibold">Scend Digital:</span>{" "}
-            Modern digital tools such as LoanTool, TaxTool, UIFTool, and Price Compare Tool — helping South Africans
+            Modern digital tools such as LoanTool, TaxTool, UIFTool, and Price Compare Tool â€” helping South Africans
             understand finance and compliance with ease.
           </li>
 
@@ -79,3 +79,4 @@ export default function AboutUsPage() {
     </div>
   );
 }
+

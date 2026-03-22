@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 
 type LoanType = "Vehicle" | "Home" | "Personal" | "CreditCard";
 
@@ -163,3 +163,4 @@ export default function LoanTool(){
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 
 export default function ToolLayout({
   title,
@@ -28,3 +28,4 @@ export default function ToolLayout({
     </div>
   );
 }
+

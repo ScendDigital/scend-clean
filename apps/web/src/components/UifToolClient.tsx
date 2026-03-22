@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import dynamic from "next/dynamic";
 
-// ✅ Load UIF Tool dynamically (client-side only)
+// âœ… Load UIF Tool dynamically (client-side only)
 const UifTool = dynamic(() => import("@/tools/UifTool"), {
   ssr: false,
   loading: () => (
@@ -19,3 +19,4 @@ export default function UifToolClient() {
     </div>
   );
 }
+

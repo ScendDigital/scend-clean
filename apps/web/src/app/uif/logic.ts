@@ -1,4 +1,4 @@
-export type UifInputs = {
+﻿export type UifInputs = {
   avgMonthlySalary: number;        // Average gross monthly salary (ZAR)
   daysWorkedLast48Months: number;  // Total work days in last 4 years
   salaryCap?: number;              // UIF salary cap (ZAR), overrideable
@@ -15,7 +15,7 @@ export type UifResults = {
   monthsApprox: number;        // creditDays / 21.67
 };
 
-// Approximate sliding scale commonly cited: 38%–60%.
+// Approximate sliding scale commonly cited: 38%â€“60%.
 // We keep a simple tier to avoid overpromising.
 // You can tune the brackets without touching the UI.
 export function getBenefitRate(monthly: number, cap: number): number {
@@ -59,3 +59,4 @@ export function formatMoney(v: number): string {
   if (!isFinite(v)) return "R 0.00";
   return "R " + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+

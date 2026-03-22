@@ -1,4 +1,4 @@
-export type LoanType = "personal" | "vehicle" | "home" | "credit_card";
+﻿export type LoanType = "personal" | "vehicle" | "home" | "credit_card";
 export const NCA_MAX_APR = 27.75;
 
 export function parseZARNumber(input: unknown): number {
@@ -126,7 +126,7 @@ export function computeLoanOutputs(input: ComputeInput): ComputeResult {
     usedAutoApr = true;
   } else {
     if (!manualAprIn || manualAprIn <= 0) {
-      msgs.push("APR not provided while Auto APR is off — using 0% temporarily. Enter APR or enable Auto APR.");
+      msgs.push("APR not provided while Auto APR is off â€” using 0% temporarily. Enter APR or enable Auto APR.");
       aprUsed = 0;
     } else {
       aprUsed = Math.round(clampApr(manualAprIn, enforceNCA) * 100) / 100;
@@ -175,3 +175,4 @@ export function computeLoanOutputs(input: ComputeInput): ComputeResult {
     disposableIncome: disposable,
   };
 }
+

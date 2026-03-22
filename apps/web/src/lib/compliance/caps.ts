@@ -1,4 +1,4 @@
-/**
+﻿/**
  * caps.ts
  * Keep all product interest caps here (annual nominal). Update when NCR publishes new tables.
  * NOTE: Values below are placeholders. Replace with current official caps.

@@ -1,4 +1,4 @@
-// src/core/taxEngine.ts
+﻿// src/core/taxEngine.ts
 import { ageFromSouthAfricanID } from "./utils";
 
 /** Selectable tax years */
@@ -228,3 +228,4 @@ export function calculateTax(input: TaxInput, table: TaxTable): TaxResult {
     effectiveRateOnTaxable: taxableIncome > 0 ? annualTax / taxableIncome : 0
   };
 }
+

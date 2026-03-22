@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 export default function PriceCompareClient() {
   return (
@@ -12,3 +12,4 @@ export default function PriceCompareClient() {
     </div>
   );
 }
+

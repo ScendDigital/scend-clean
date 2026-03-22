@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 
 type ContactBody = {
   name: string;
@@ -56,3 +56,4 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true });
 }
+

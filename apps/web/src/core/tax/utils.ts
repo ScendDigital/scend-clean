@@ -1,4 +1,4 @@
-export function fmtCurrency(v: number) {
+﻿export function fmtCurrency(v: number) {
   return new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(v);
 }
 export function ageFromSouthAfricanID(id: string) {
@@ -14,3 +14,4 @@ export function ageFromSouthAfricanID(id: string) {
   if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
   return age;
 }
+

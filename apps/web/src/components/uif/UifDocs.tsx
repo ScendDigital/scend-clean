@@ -1,4 +1,4 @@
-export default function UifDocs() {
+﻿export default function UifDocs() {
   return (
     <div className="my-6 rounded-xl border p-4">
       <h2 className="text-xl font-semibold">UIF Tool</h2>
@@ -8,3 +8,4 @@ export default function UifDocs() {
     </div>
   );
 }
+

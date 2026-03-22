@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import dynamic from "next/dynamic";
 
@@ -10,4 +10,5 @@ const UifTool = dynamic(() => import("../../components/uif/UifTool"), {
 export default function ClientOnly() {
   return <UifTool />;
 }
+
 

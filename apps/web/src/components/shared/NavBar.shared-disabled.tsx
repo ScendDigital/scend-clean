@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import Image from "next/image";
@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export default function NavBar() {
-  // Always a string – no more "possibly null"
+  // Always a string â€“ no more "possibly null"
   const pathname = usePathname() ?? "";
 
   const isActive = (href: string) =>
@@ -40,7 +40,7 @@ export default function NavBar() {
                 Scend
               </span>
               <span className="text-[11px] uppercase tracking-[0.18em] text-pink-600">
-                Digital • Wellness • Publishing
+                Digital â€¢ Wellness â€¢ Publishing
               </span>
             </div>
           </Link>
@@ -124,3 +124,4 @@ export default function NavBar() {
     </nav>
   );
 }
+

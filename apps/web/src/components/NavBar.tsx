@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 export default function NavBar() {
   return (
@@ -13,3 +13,4 @@ export default function NavBar() {
 // vercel-rebuild
 
 // vercel-rebuild
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import TaxTool from "@/tools/TaxTool";
 
@@ -20,3 +20,4 @@ export default function Page() {
     </div>
   );
 }
+

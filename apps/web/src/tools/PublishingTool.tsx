@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 
@@ -15,7 +15,7 @@ export default function PublishingTool() {
             Scend Publishing
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
-            Professional, author-centred publishing support â€” from manuscript
+            Professional, author-centred publishing support Ã¢â‚¬â€ from manuscript
             clean-up to print-ready files and launch strategy. Designed to work
             hand-in-hand with Scend&apos;s digital tools and wellness focus.
           </p>
@@ -62,10 +62,10 @@ export default function PublishingTool() {
                 and structure check.
               </p>
               <ul className="mt-3 space-y-1 text-[13px] text-gray-800">
-                <li>â€¢ Manuscript review &amp; high-level feedback</li>
-                <li>â€¢ Light language &amp; consistency edit</li>
-                <li>â€¢ Basic interior formatting (Word / PDF)</li>
-                <li>â€¢ Simple front-matter &amp; back-matter setup</li>
+                <li>Ã¢â‚¬Â¢ Manuscript review &amp; high-level feedback</li>
+                <li>Ã¢â‚¬Â¢ Light language &amp; consistency edit</li>
+                <li>Ã¢â‚¬Â¢ Basic interior formatting (Word / PDF)</li>
+                <li>Ã¢â‚¬Â¢ Simple front-matter &amp; back-matter setup</li>
               </ul>
               <div className="mt-4 text-[12px] text-gray-600">
                 From <span className="font-semibold">R</span> (quote on request)
@@ -85,11 +85,11 @@ export default function PublishingTool() {
                 that can live on Amazon and local print.
               </p>
               <ul className="mt-3 space-y-1 text-[13px] text-gray-800">
-                <li>â€¢ Detailed edit &amp; clean-up</li>
-                <li>â€¢ Professional interior layout (print &amp; eBook)</li>
-                <li>â€¢ Cover guidance (Canva / designer-ready)</li>
-                <li>â€¢ ISBN &amp; metadata guidance</li>
-                <li>â€¢ Upload support (e.g. Amazon KDP)</li>
+                <li>Ã¢â‚¬Â¢ Detailed edit &amp; clean-up</li>
+                <li>Ã¢â‚¬Â¢ Professional interior layout (print &amp; eBook)</li>
+                <li>Ã¢â‚¬Â¢ Cover guidance (Canva / designer-ready)</li>
+                <li>Ã¢â‚¬Â¢ ISBN &amp; metadata guidance</li>
+                <li>Ã¢â‚¬Â¢ Upload support (e.g. Amazon KDP)</li>
               </ul>
               <div className="mt-4 text-[12px] text-gray-600">
                 Pricing shaped around page-count and complexity.
@@ -106,10 +106,10 @@ export default function PublishingTool() {
                 or material to adapt for talks / TV / courses).
               </p>
               <ul className="mt-3 space-y-1 text-[13px] text-gray-800">
-                <li>â€¢ Complex layout &amp; long-form manuscripts</li>
-                <li>â€¢ Multiple formats (print, eBook, workbook)</li>
-                <li>â€¢ Slide / talk outline support where relevant</li>
-                <li>â€¢ Strategy session: how to use the book as a tool</li>
+                <li>Ã¢â‚¬Â¢ Complex layout &amp; long-form manuscripts</li>
+                <li>Ã¢â‚¬Â¢ Multiple formats (print, eBook, workbook)</li>
+                <li>Ã¢â‚¬Â¢ Slide / talk outline support where relevant</li>
+                <li>Ã¢â‚¬Â¢ Strategy session: how to use the book as a tool</li>
               </ul>
               <div className="mt-4 text-[12px] text-gray-600">
                 Scoped via discovery session with you.
@@ -126,24 +126,24 @@ export default function PublishingTool() {
             </h2>
             <ol className="mt-3 space-y-2 text-[13px] text-gray-700 list-decimal list-inside">
               <li>
-                <span className="font-semibold">Share your manuscript</span> â€”
+                <span className="font-semibold">Share your manuscript</span> Ã¢â‚¬â€
                 even if it&apos;s messy. We sign an NDA if required.
               </li>
               <li>
-                <span className="font-semibold">We review &amp; respond</span> â€”
+                <span className="font-semibold">We review &amp; respond</span> Ã¢â‚¬â€
                 you get a structured summary of what&apos;s needed (edit, layout,
                 cover, etc.).
               </li>
               <li>
-                <span className="font-semibold">We agree a package</span> â€”
+                <span className="font-semibold">We agree a package</span> Ã¢â‚¬â€
                 scoped around page-count, complexity and your goals.
               </li>
               <li>
-                <span className="font-semibold">You approve, we build</span> â€”
+                <span className="font-semibold">You approve, we build</span> Ã¢â‚¬â€
                 we edit, structure and produce print-ready and digital files.
               </li>
               <li>
-                <span className="font-semibold">Support at launch</span> â€”
+                <span className="font-semibold">Support at launch</span> Ã¢â‚¬â€
                 basic launch copy ideas, and how to plug into your Scend tools.
               </li>
             </ol>
@@ -220,9 +220,10 @@ export default function PublishingTool() {
           <strong>Note:</strong> Scend Publishing is flexible. We can work only
           on editing, only on layout, or on the full journey from raw draft to
           live book. Pricing is always agreed in advance and aligned with what
-          you actually need â€” no surprise add-ons.
+          you actually need Ã¢â‚¬â€ no surprise add-ons.
         </p>
       </section>
     </div>
   );
 }
+

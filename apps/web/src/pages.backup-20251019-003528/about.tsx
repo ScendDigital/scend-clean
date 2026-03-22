@@ -1,4 +1,4 @@
-export default function About() {
+﻿export default function About() {
   return (
     <main className="min-h-screen bg-white">
       <div className="mx-auto max-w-4xl px-4 py-12">
@@ -17,3 +17,4 @@ export default function About() {
     </main>
   );
 }
+

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * affordability.ts
  * Reasonable living expense floor + affordability helpers.
  * Replace the demo bands with your policy table or NCR guidelines.

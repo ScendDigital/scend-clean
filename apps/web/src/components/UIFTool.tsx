@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useMemo, useState } from "react";
 
@@ -9,7 +9,7 @@ const AVG_DAYS_PER_MONTH = 30.4167;                      // calendar average
 const MONTHLY_THRESHOLD = 17712;                         // UIF monthly ceiling (ZAR)
 const THRESHOLD_ADR = MONTHLY_THRESHOLD / AVG_DAYS_PER_MONTH;
 
-// Sliding IRR for unemployment: 60% → 38% linearly over the capped ADR
+// Sliding IRR for unemployment: 60% â†’ 38% linearly over the capped ADR
 function getSlidingIRR(adr: number) {
   if (adr <= 0) return 0.38;
   const ratio = Math.min(1, adr / THRESHOLD_ADR); // 0..1
@@ -17,7 +17,7 @@ function getSlidingIRR(adr: number) {
   return Math.min(0.60, Math.max(0.38, irr));
 }
 
-// Credit days earned ≈ 7.5 per month worked, capped at 365
+// Credit days earned â‰ˆ 7.5 per month worked, capped at 365
 function getCreditDays(months: number) {
   return Math.min(365, Math.max(0, months * 7.5));
 }
@@ -45,7 +45,7 @@ export default function UIFTool() {
     const irr =
       benefit === "unemployment"
         ? getSlidingIRR(adrCapped)
-        : 0.66; // ±66% commonly applied for illness/maternity/adoption
+        : 0.66; // Â±66% commonly applied for illness/maternity/adoption
 
     const daily = adrCapped * irr;
     const monthlyApprox = daily * 30; // simple ~30-day view
@@ -105,8 +105,8 @@ export default function UIFTool() {
           <h2>Documents Required</h2>
           <ul>
             <li>SA ID/Smart ID (or valid passport + work permit)</li>
-            <li>UI-19 — Employer declaration (employment start/end, reason for termination)</li>
-            <li>UI-2.8 — Banking details form (stamped by bank)</li>
+            <li>UI-19 â€” Employer declaration (employment start/end, reason for termination)</li>
+            <li>UI-2.8 â€” Banking details form (stamped by bank)</li>
             <li>Recent bank statement</li>
             <li>Payslips / proof of earnings for the last 6 months</li>
             <li>Proof of termination (retrenchment/contract expiry/closure letter)</li>
@@ -173,7 +173,7 @@ export default function UIFTool() {
               value={monthsContrib}
               onChange={(e) => setMonthsContrib(Number(e.target.value))}
             />
-            <p className="text-xs text-gray-500 mt-1">Earn ≈7.5 credit days/month (max 365).</p>
+            <p className="text-xs text-gray-500 mt-1">Earn â‰ˆ7.5 credit days/month (max 365).</p>
           </div>
 
           <div className="col-span-2 flex gap-2 mt-2">
@@ -216,7 +216,7 @@ export default function UIFTool() {
           </div>
 
           <p className="text-xs text-gray-600 mt-3">
-            <strong>Note:</strong> “Total Potential Payout” is the cumulative amount over your eligible days; UIF pays in
+            <strong>Note:</strong> â€œTotal Potential Payoutâ€ is the cumulative amount over your eligible days; UIF pays in
             monthly instalments, not as a once-off lump sum.
           </p>
 
@@ -236,19 +236,19 @@ export default function UIFTool() {
 
         <div className="grid gap-6 sm:grid-cols-2 mt-4">
           <div>
-            <h4 className="font-semibold mb-2">✅ Qualifying reasons</h4>
+            <h4 className="font-semibold mb-2">âœ… Qualifying reasons</h4>
             <ul className="list-disc pl-5 text-sm space-y-1">
               <li>Retrenchment or downsizing</li>
               <li>End of fixed-term or project contract</li>
               <li>Employer closure/liquidation, or death (domestic workers)</li>
               <li>Illness or injury certified by a doctor</li>
-              <li>Maternity leave (up to 121 days at ±66%)</li>
-              <li>Adoption of a child under 2 years (up to 65 days at ±66%)</li>
+              <li>Maternity leave (up to 121 days at Â±66%)</li>
+              <li>Adoption of a child under 2 years (up to 65 days at Â±66%)</li>
               <li>Death of a contributor (dependants may claim)</li>
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold mb-2">🚫 Not covered</h4>
+            <h4 className="font-semibold mb-2">ðŸš« Not covered</h4>
             <ul className="list-disc pl-5 text-sm space-y-1">
               <li>Voluntary resignation</li>
               <li>Dismissal for misconduct/fraud</li>
@@ -260,7 +260,7 @@ export default function UIFTool() {
         </div>
 
         <div className="mt-4">
-          <h4 className="font-semibold mb-2">⏳ Claim timeframes</h4>
+          <h4 className="font-semibold mb-2">â³ Claim timeframes</h4>
           <ul className="list-disc pl-5 text-sm space-y-1">
             <li>Unemployment: up to 365 days (based on credits)</li>
             <li>Illness: up to 238 days (medical certificate required)</li>
@@ -279,8 +279,8 @@ export default function UIFTool() {
         <h3 className="text-xl font-semibold mb-3">Documents Required Before Visiting Labour (with download links)</h3>
         <ul className="list-disc pl-5 text-sm space-y-1">
           <li>SA ID/Smart ID (or valid passport + work permit for foreign nationals)</li>
-          <li>UI-19 — Employer declaration (employment start/end, reason for termination). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-19</a></li>
-          <li>UI-2.8 — Banking details form (stamped by bank). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-2.8</a></li>
+          <li>UI-19 â€” Employer declaration (employment start/end, reason for termination). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-19</a></li>
+          <li>UI-2.8 â€” Banking details form (stamped by bank). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-2.8</a></li>
           <li>Recent bank statement (shows account holder & number)</li>
           <li>Payslips / proof of earnings for the last 6 months</li>
           <li>Proof of termination (retrenchment/contract expiry/closure letter)</li>
@@ -308,3 +308,4 @@ export default function UIFTool() {
     </div>
   );
 }
+

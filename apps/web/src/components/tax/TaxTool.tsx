@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
 
 /* ------------------------------------------------------------------
    SARS tables & helpers
-   NOTE: 2025/26 is provisional — mirrors 2024/25 until official release.
+   NOTE: 2025/26 is provisional â€” mirrors 2024/25 until official release.
    MTC: R364 (main+first), R246 (each additional) per month.
    ------------------------------------------------------------------ */
 
@@ -265,7 +265,7 @@ export default function TaxTool() {
     const notes: string[] = [];
 
     if (year === "2025/26") {
-      notes.push("2025/26 uses 2024/25 tables provisionally — update once official figures are confirmed.");
+      notes.push("2025/26 uses 2024/25 tables provisionally â€” update once official figures are confirmed.");
     }
 
     // Proration factor m
@@ -291,7 +291,7 @@ export default function TaxTool() {
         ? Math.max(0, f.retirementAnnuityMonthly || 0) * 12
         : Math.max(0, f.retirementAnnuityAnnual || 0);
 
-    // RA limit (annual) pro-rated: min(27.5% of income, R350k) × m
+    // RA limit (annual) pro-rated: min(27.5% of income, R350k) Ã— m
     const raMax = Math.min(grossAnnual * 0.275, 350000 * m);
     const raAllowed = Math.max(0, Math.min(raInputAnnual * m, raMax));
     if (raInputAnnual * m > raMax + 1e-6) {
@@ -336,7 +336,7 @@ export default function TaxTool() {
     );
 
     if (f.mode === "Monthly") notes.push(`Monthly proration: days worked (${f.daysWorked}) / days in month (${f.daysInMonth}).`);
-    if (f.savingsWithdrawal > 0) notes.push(`Two-pot savings withdrawal taxed at marginal rate ˜ ${(marginal * 100).toFixed(1)}%.`);
+    if (f.savingsWithdrawal > 0) notes.push(`Two-pot savings withdrawal taxed at marginal rate Ëœ ${(marginal * 100).toFixed(1)}%.`);
     if (f.oldRegWithdrawal > 0) notes.push("Old-reg withdrawal lump-sum table applied.");
     if (f.retirementLumpSum > 0) notes.push("Retirement lump-sum table applied with rolling prior lumps.");
 
@@ -399,7 +399,7 @@ export default function TaxTool() {
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text(`Scend – SARS Tax Estimate (${f.year})`, w / 2, 56, { align: "center" });
+    doc.text(`Scend â€“ SARS Tax Estimate (${f.year})`, w / 2, 56, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Generated: ${new Date().toLocaleString()}`, w / 2, 72, { align: "center" });
@@ -436,7 +436,7 @@ export default function TaxTool() {
         ["PAYE (monthly)", currency(computed.payeMonthly)],
         ["Estimated Net (monthly)", currency(computed.estNetMonthly)],
         ...(f.savingsWithdrawal > 0
-          ? [["Two-pot Savings Withdrawal Tax (˜ marginal)", currency(computed.savingsWithdrawalTax)]]
+          ? [["Two-pot Savings Withdrawal Tax (Ëœ marginal)", currency(computed.savingsWithdrawalTax)]]
           : []),
         ...(f.oldRegWithdrawal > 0
           ? [["Old-Reg Withdrawal Lump-Sum Tax", currency(computed.oldRegWithdrawalTax)]]
@@ -464,7 +464,7 @@ export default function TaxTool() {
   }
 
   /* ------------------------------------------------------------------
-     UI — Premium look & feel (matching LoanTool)
+     UI â€” Premium look & feel (matching LoanTool)
      ------------------------------------------------------------------ */
 
   if (!mounted) {
@@ -476,7 +476,7 @@ export default function TaxTool() {
               Scend Tax Tool
             </h1>
             <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
-              Loading tax calculator…
+              Loading tax calculatorâ€¦
             </p>
           </div>
         </section>
@@ -650,7 +650,7 @@ export default function TaxTool() {
                     onChange={(e) => markDirty(setF)({ ...f, retirementAnnuityMonthly: Number(e.target.value) })}
                   />
                   <span className="mt-1 block text-[12px] text-gray-700">
-                    Annualised ×12 and pro-rated by days when in Monthly mode. Cap: 27.5% of income, max R350k p.a.
+                    Annualised Ã—12 and pro-rated by days when in Monthly mode. Cap: 27.5% of income, max R350k p.a.
                   </span>
                 </label>
               ) : (
@@ -748,7 +748,7 @@ export default function TaxTool() {
 
               {dirty && (
                 <span className="text-xs text-amber-600 self-center">
-                  Values changed — click <b>Calculate</b>.
+                  Values changed â€” click <b>Calculate</b>.
                 </span>
               )}
             </div>
@@ -813,7 +813,7 @@ export default function TaxTool() {
                       <span>Two-Pot Savings Withdrawal Tax</span>
                       <span>
                         {currency(computed.savingsWithdrawalTax)}{" "}
-                        <em className="text-gray-500">(˜ marginal {(computed.marginalRate * 100).toFixed(1)}%)</em>
+                        <em className="text-gray-500">(Ëœ marginal {(computed.marginalRate * 100).toFixed(1)}%)</em>
                       </span>
                     </div>
                   )}
@@ -855,4 +855,5 @@ export default function TaxTool() {
     </div>
   );
 }
+
 

@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 type Kind = "uif" | "tax" | "price" | "loan" | "generic";
 export default function ToolDisclaimer({ kind = "generic" }: { kind?: Kind }) {
   let text: React.ReactNode;
@@ -20,3 +20,4 @@ export default function ToolDisclaimer({ kind = "generic" }: { kind?: Kind }) {
   }
   return <div className="mt-8 rounded-xl border p-4 text-sm leading-6"><p>{text}</p></div>;
 }
+

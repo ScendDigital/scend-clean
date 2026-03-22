@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { calculateUif, formatMoney, UifInputs, UifResults } from "./logic";
@@ -84,7 +84,7 @@ export default function UifCalculator({ onCalculated }: Props) {
           <p className="text-xs text-gray-500 mt-1">
             {inputType === "days"
               ? "Enter total days worked in the last 4 years."
-              : "We’ll convert months to days using 21.67 working days per month."}
+              : "Weâ€™ll convert months to days using 21.67 working days per month."}
           </p>
         </div>
         <div>
@@ -162,3 +162,4 @@ export default function UifCalculator({ onCalculated }: Props) {
     </div>
   );
 }
+

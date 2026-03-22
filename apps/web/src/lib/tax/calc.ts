@@ -1,4 +1,4 @@
-// web/src/lib/tax/calc.ts
+﻿// web/src/lib/tax/calc.ts
 
 export type TaxYear = "2024/25" | "2025/26";
 
@@ -78,7 +78,7 @@ export function calculateAnnualPAYE(input: {
   retirementContribAnnual: number;  // ANNUAL
   medDependants: number;            // incl. main member
   medContributionMonthly: number;   // per month
-  monthsCovered: number;            // 1â€“12 (MTC/AMTC use)
+  monthsCovered: number;            // 1Ã¢â‚¬â€œ12 (MTC/AMTC use)
   medOutOfPocketAnnual: number;     // qualifying OOP (ANNUAL)
   idNumber?: string;
   disabled?: boolean;
@@ -201,3 +201,4 @@ export function calculateAnnualPAYE(input: {
     monthProrationPctDays,
   };
 }
+

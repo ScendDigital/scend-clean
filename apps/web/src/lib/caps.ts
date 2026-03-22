@@ -1,4 +1,4 @@
-export const caps = {
+﻿export const caps = {
   unsecured: { maxAPR: 0.2775 }, // 27.75% (policy cap; update if needed)
   vehicle: {
     maxAPR: 0.2775,
@@ -11,7 +11,7 @@ export const caps = {
   // Monthly service-fee cap (incl. VAT)
   serviceFeeMax: 69.0,
 
-  // Initiation fee examples — replace with NCR schedule for production
+  // Initiation fee examples â€” replace with NCR schedule for production
   initiationFee: {
     unsecured: { base: 165, pct: 0.10, max: 1050 },
     vehicle:   { base: 0,   pct: 0.00, max: 0    },
@@ -33,3 +33,4 @@ export function mortgageCapAPRDecimal(repoPct?: number): number {
   const hard = (caps.mortgageMaxHardCap ?? 24) / 100;
   return Math.min(candidate, hard);
 }
+

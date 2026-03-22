@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -15,7 +15,7 @@ import {
 import { caps } from "../../lib/caps";
 import { minExpenseNorm } from "../../lib/men";
 
-/* ───────────────── Helpers/const ───────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Helpers/const â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const currency = (n: number) =>
   (isFinite(n) ? n : 0).toLocaleString("en-ZA", {
     style: "currency",
@@ -57,7 +57,7 @@ function aprFromScore(score: number) {
   return 27.75;
 }
 
-/* ───────────────── Component ───────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export default function LoanTool() {
   const [f, setF] = React.useState({
     loanType: "Personal Loan",
@@ -163,9 +163,9 @@ export default function LoanTool() {
 
     // Decision
     const decision = !affordable
-      ? "Declined – fails affordability"
+      ? "Declined â€“ fails affordability"
       : dti >= 0.55
-      ? "Declined – DTI too high"
+      ? "Declined â€“ DTI too high"
       : "Approved / Borderline";
 
     return {
@@ -210,7 +210,7 @@ export default function LoanTool() {
     const w = doc.internal.pageSize.getWidth();
 
     doc.setFont("helvetica", "bold"); doc.setFontSize(16);
-    doc.text(`Scend – ${results.loanType} Results`, w / 2, 56, { align: "center" });
+    doc.text(`Scend â€“ ${results.loanType} Results`, w / 2, 56, { align: "center" });
     doc.setFont("helvetica", "normal"); doc.setFontSize(10);
     doc.text(`Generated: ${new Date().toLocaleString()}`, w / 2, 72, { align: "center" });
 
@@ -262,7 +262,7 @@ export default function LoanTool() {
     doc.save(`Scend_${results.loanType.replace(/\s+/g, "")}_Results.pdf`);
   }
 
-  /* ───────────────── UI ───────────────── */
+  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ UI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   return (
     <div className="space-y-8">
       {/* Premium header */}
@@ -443,7 +443,7 @@ export default function LoanTool() {
                   value={f.ageYears}
                   onChange={(e) => setF((v) => ({ ...v, ageYears: Number(e.target.value) }))}
                 />
-                <span className="mt-1 block text-[12px] text-gray-700">Term should end ≤ age {MAX_END_AGE}.</span>
+                <span className="mt-1 block text-[12px] text-gray-700">Term should end â‰¤ age {MAX_END_AGE}.</span>
               </label>
             </div>
 
@@ -674,7 +674,7 @@ export default function LoanTool() {
             <p className="text-[12.5px] leading-relaxed text-gray-700">
               <strong>Disclaimer:</strong> This tool provides an educational estimate only. It is not financial advice.
               All outcomes remain subject to the National Credit Act (NCA), lender policies, supporting documents,
-              affordability assessments and credit checks. Actual results may differ from a lender’s assessment.
+              affordability assessments and credit checks. Actual results may differ from a lenderâ€™s assessment.
               Scend Pty Ltd does not store your personal data unless you explicitly choose to send your results via email.
             </p>
           </div>
@@ -683,3 +683,4 @@ export default function LoanTool() {
     </div>
   );
 }
+

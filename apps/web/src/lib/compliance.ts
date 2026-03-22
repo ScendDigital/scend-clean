@@ -1,4 +1,4 @@
-import { caps, mortgageCapAPRDecimal } from "./caps";
+﻿import { caps, mortgageCapAPRDecimal } from "./caps";
 
 export function clampRateToCap(requestedAPR: number, loanClass: "unsecured" | "vehicle" | "mortgage", repoPct?: number) {
   let cap = caps.unsecured.maxAPR;
@@ -52,3 +52,4 @@ export function getCapAPRByLoanType(loanType: string, repoPct?: number) {
   if (loanType === "Home Loan")       return mortgageCapAPRDecimal(repoPct);
   return caps.unsecured.maxAPR; // Personal/Credit Card
 }
+
