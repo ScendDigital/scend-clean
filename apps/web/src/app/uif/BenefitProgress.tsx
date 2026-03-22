@@ -16,3 +16,4 @@ export default function BenefitProgress({ creditDays }: Props) {
   );
 }
 
+

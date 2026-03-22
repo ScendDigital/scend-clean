@@ -16,3 +16,4 @@ export default function SectionHeading({ id, title, subtitle }: Props) {
   );
 }
 
+

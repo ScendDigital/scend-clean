@@ -34,3 +34,4 @@ export function mortgageCapAPRDecimal(repoPct?: number): number {
   return Math.min(candidate, hard);
 }
 
+

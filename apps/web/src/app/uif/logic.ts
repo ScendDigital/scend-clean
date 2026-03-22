@@ -60,3 +60,4 @@ export function formatMoney(v: number): string {
   return "R " + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+

@@ -53,3 +53,4 @@ export function getCapAPRByLoanType(loanType: string, repoPct?: number) {
   return caps.unsecured.maxAPR; // Personal/Credit Card
 }
 
+

@@ -80,3 +80,4 @@ function irrBisection(flows: number[], tol = 1e-8, maxIter = 2000, lo = 0, hi = 
   }
   return (a + b) / 2;
 }
+

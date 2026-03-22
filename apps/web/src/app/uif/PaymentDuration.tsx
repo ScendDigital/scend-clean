@@ -18,3 +18,4 @@ export default function PaymentDuration({ results }: { results?: UifResults | nu
   );
 }
 
+

@@ -43,3 +43,4 @@ export function unsecuredInitiationCap(amount: number): number {
 export function clampUnsecuredInitiation(requested: number, amount: number): number {
   return Math.min(Math.max(requested, 0), unsecuredInitiationCap(amount));
 }
+

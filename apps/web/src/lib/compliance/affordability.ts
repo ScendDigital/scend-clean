@@ -41,3 +41,4 @@ export function dtiAfter(
   const denom = Math.max(grossIncome, 1); // avoid /0
   return (existingDebtsMonthly + proposedMonthlyRepayment) / denom;
 }
+

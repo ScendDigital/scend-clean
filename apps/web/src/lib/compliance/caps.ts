@@ -16,3 +16,4 @@ export function clampRateToCap(apr: number, product: ProductKey) {
   const cap = caps[product].maxAPR;
   return Math.min(Math.max(apr, 0), cap);
 }
+
