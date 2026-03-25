@@ -1,3 +1,3 @@
-﻿@tailwind base;
-@tailwind components;
-@tailwind utilities;
+﻿@import "tailwindcss";
+
+/* Optional: your custom styles can go below */body { background: yellow; }
