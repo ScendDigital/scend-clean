@@ -1,5 +1,6 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import ResultShareButton from "@/components/ResultShareButton";
 
 import * as React from "react";
 import {
@@ -119,6 +120,9 @@ export default function LoanTool() {
     const aprCandidatePct = f.autoAPR ? aprFromScore(scoreAdj) : f.aprPercent;
     const capAPRdec = getCapAPRByLoanType(f.loanType, f.repoPct);
     const aprPctFinal = Math.min(aprCandidatePct, capAPRdec * 100);
+    if (aprCandidatePct > capAPRdec * 100 + 0.005) {
+      notes.push(`Proposed APR (${aprCandidatePct.toFixed(2)}%) was capped at the NCA maximum (${(capAPRdec * 100).toFixed(2)}%) for this agreement type.`);
+    }
     const r = monthlyRate(aprPctFinal / 100);
 
     // Initiation fee
@@ -210,7 +214,7 @@ export default function LoanTool() {
     const w = doc.internal.pageSize.getWidth();
 
     doc.setFont("helvetica", "bold"); doc.setFontSize(16);
-    doc.text(`Scend â€“ ${results.loanType} Results`, w / 2, 56, { align: "center" });
+    doc.text(`Scend - ${results.loanType} Results`, w / 2, 56, { align: "center" });
     doc.setFont("helvetica", "normal"); doc.setFontSize(10);
     doc.text(`Generated: ${new Date().toLocaleString()}`, w / 2, 72, { align: "center" });
 
@@ -266,17 +270,17 @@ export default function LoanTool() {
   return (
     <div className="space-y-8">
       {/* Premium header */}
-      <section className="rounded-3xl bg-gradient-to-br from-pink-50 via-white to-white p-8 shadow-sm ring-1 ring-gray-200/60">
+      <section className="scend-tool-hero rounded-3xl bg-gradient-to-br from-pink-50 via-white to-white p-6 shadow-sm ring-1 ring-pink-100/70 md:p-8">
         <div className="max-w-3xl">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">Scend Loan Tool</h1>
           <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
-            Compliant calculations with MEN fallback, APR & fee caps, deposit/balloon handling, and repo-linked mortgage caps.
+            Affordability estimates with living-expense checks, agreement-specific NCA rate caps, fees, deposits, and vehicle balloon calculations.
           </p>
         </div>
       </section>
 
       {/* Main grid */}
-      <section className="grid gap-6 md:grid-cols-2">
+      <section className="grid gap-6 xl:grid-cols-2">
         {/* Form card */}
         <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-gray-200/70">
           <h2 className="text-lg font-semibold text-gray-900">Application details</h2>
@@ -320,9 +324,8 @@ export default function LoanTool() {
               </label>
             </div>
 
-            {/* Mortgage repo */}
-            {f.loanType === "Home Loan" && (
-              <div className="grid gap-3 md:grid-cols-3">
+            {/* Repo reference used to calculate the NCA rate cap for each loan type */}
+            <div className="grid gap-3 md:grid-cols-3">
                 <label className="text-[15px] text-gray-900">
                   Current repo rate (%)
                   <input
@@ -333,9 +336,11 @@ export default function LoanTool() {
                     value={f.repoPct}
                     onChange={(e) => setF((v) => ({ ...v, repoPct: Number(e.target.value) }))}
                   />
+                  <span className="mt-1 block text-[12px] text-gray-700">
+                    Used to calculate the NCA interest ceiling for this agreement type.
+                  </span>
                 </label>
-              </div>
-            )}
+            </div>
 
             {/* Type-specific */}
             {f.loanType === "Home Loan" && (
@@ -531,26 +536,29 @@ export default function LoanTool() {
 
             {/* Buttons */}
             <div className="mt-4 flex flex-wrap gap-3">
-              <button
+              <button type="button"
                 onClick={onCalculate}
                 className="glow rounded-2xl bg-pink-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-700"
               >
                 Calculate
               </button>
 
-              <button
+              <button type="button"
                 onClick={onClear}
                 className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-gray-900 bg-white ring-1 ring-gray-200 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-pink-200 disabled:opacity-50"
               >
                 Clear
               </button>
 
-              <button
+              {results && (<>
+<button type="button" disabled={!results}
                 onClick={onPDF}
                 className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-gray-900 bg-white ring-1 ring-gray-200 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-pink-200 disabled:opacity-50"
               >
                 Export PDF (Results only)
               </button>
+<ResultShareButton title="Scend Loan Tool" disabled={!results}  resultSelector=".scend-loan-results"/>
+</>)}
             </div>
           </div>
         </div>
@@ -564,7 +572,7 @@ export default function LoanTool() {
               Enter details and click <strong>Calculate</strong> to see results.
             </div>
           ) : (
-            <div className="mt-4 grid gap-2 text-[15px]">
+            <div className="mt-4 grid gap-2 text-[15px] [&_span:last-child]:font-semibold [&_span:last-child]:text-pink-700">
               <div className="flex items-center justify-between">
                 <span>APR (capped)</span><span>{results.aprPctFinal.toFixed(2)}%</span>
               </div>

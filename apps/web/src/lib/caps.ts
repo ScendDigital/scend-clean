@@ -1,37 +1,42 @@
 ﻿export const caps = {
-  unsecured: { maxAPR: 0.2775 }, // 27.75% (policy cap; update if needed)
+  unsecured: { marginPct: 21 }, // Personal loans: repo + 21%
   vehicle: {
-    maxAPR: 0.2775,
+    marginPct: 17, // Other credit agreements: repo + 17%
     policy: { maxBalloonPct: 0.4, maxTermMonths: 72 },
   },
   mortgage: {
-    fixedMaxAPR: undefined as number | undefined, // if set, overrides repo-linked cap
+    marginPct: 12,
+    fixedMaxAPR: undefined as number | undefined, // Optional product override
   },
+  revolving: { marginPct: 14 }, // Credit facilities, including credit cards
 
   // Monthly service-fee cap (incl. VAT)
   serviceFeeMax: 69.0,
 
-  // Initiation fee examples â€” replace with NCR schedule for production
+  // NCA Regulation 42 Table B initiation fee structures.
   initiationFee: {
-    unsecured: { base: 165, pct: 0.10, max: 1050 },
-    vehicle:   { base: 0,   pct: 0.00, max: 0    },
-    mortgage:  { base: 0,   pct: 0.00, max: 0    },
+    unsecured: { base: 165, pct: 0.10, threshold: 1_000, max: 1_050 },
+    revolving: { base: 165, pct: 0.10, threshold: 1_050, max: 1_050 },
+    vehicle:   { base: 165, pct: 0.10, threshold: 1_000, max: 1_050 },
+    mortgage:  { base: 1_100, pct: 0.10, threshold: 10_000, max: 5_250 },
   },
 
-  // Repo inputs for mortgage cap
-  repoDefaultPct: 8.25,
-  mortgageMarginPct: 12.0,
-  mortgageMaxHardCap: 24.0,
+  // SARB repo rate effective 1 October 2026; editable in the tool.
+  repoDefaultPct: 7.25,
 };
 
-/** Mortgage cap APR (decimal) from repo or fixed cap. */
+export type LoanRateClass = "unsecured" | "vehicle" | "mortgage" | "revolving";
+
+/** NCA maximum nominal APR (decimal) for an agreement type. */
+export function ncaMaxAPRDecimal(loanClass: LoanRateClass, repoPct = caps.repoDefaultPct): number {
+  const marginPct = caps[loanClass].marginPct;
+  return Math.max(0, (Math.max(0, repoPct) + marginPct) / 100);
+}
+
+/** Mortgage compatibility helper retained for existing imports. */
 export function mortgageCapAPRDecimal(repoPct?: number): number {
-  const repo = (repoPct ?? caps.repoDefaultPct) / 100;
   if (typeof caps.mortgage.fixedMaxAPR === "number") return caps.mortgage.fixedMaxAPR;
-  const margin = (caps.mortgageMarginPct ?? 12) / 100;
-  const candidate = repo + margin;
-  const hard = (caps.mortgageMaxHardCap ?? 24) / 100;
-  return Math.min(candidate, hard);
+  return ncaMaxAPRDecimal("mortgage", repoPct);
 }
 
 

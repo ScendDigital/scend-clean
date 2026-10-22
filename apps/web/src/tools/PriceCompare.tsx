@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 
@@ -15,7 +15,7 @@ export default function PublishingTool() {
             Scend Publishing
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
-            Professional, author-centred publishing support â€” from manuscript
+            Professional, author-centred publishing support - from manuscript
             clean-up to print-ready files and launch strategy. Designed to work
             hand-in-hand with Scend&apos;s digital tools and wellness focus.
           </p>
@@ -126,24 +126,24 @@ export default function PublishingTool() {
             </h2>
             <ol className="mt-3 space-y-2 text-[13px] text-gray-700 list-decimal list-inside">
               <li>
-                <span className="font-semibold">Share your manuscript</span> â€”
+                <span className="font-semibold">Share your manuscript</span> -
                 even if it&apos;s messy. We sign an NDA if required.
               </li>
               <li>
-                <span className="font-semibold">We review &amp; respond</span> â€”
+                <span className="font-semibold">We review &amp; respond</span> -
                 you get a structured summary of what&apos;s needed (edit, layout,
                 cover, etc.).
               </li>
               <li>
-                <span className="font-semibold">We agree a package</span> â€”
+                <span className="font-semibold">We agree a package</span> -
                 scoped around page-count, complexity and your goals.
               </li>
               <li>
-                <span className="font-semibold">You approve, we build</span> â€”
+                <span className="font-semibold">You approve, we build</span> -
                 we edit, structure and produce print-ready and digital files.
               </li>
               <li>
-                <span className="font-semibold">Support at launch</span> â€”
+                <span className="font-semibold">Support at launch</span> -
                 basic launch copy ideas, and how to plug into your Scend tools.
               </li>
             </ol>
@@ -220,7 +220,7 @@ export default function PublishingTool() {
           <strong>Note:</strong> Scend Publishing is flexible. We can work only
           on editing, only on layout, or on the full journey from raw draft to
           live book. Pricing is always agreed in advance and aligned with what
-          you actually need â€” no surprise add-ons.
+          you actually need - no surprise add-ons.
         </p>
       </section>
     </div>

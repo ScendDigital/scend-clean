@@ -1,3 +1,130 @@
-﻿@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Optional: your custom styles can go below */body { background: yellow; }
+
+/* SCEND PINK-GREY THEME */
+:root {
+  --scend-pink: #e6007e;
+  --scend-pink-dark: #c9006d;
+  --scend-grey: #f3f4f6;
+  --scend-text: #242a32;
+}
+
+body {
+  background-color: var(--scend-grey);
+  color: var(--scend-text);
+}
+
+main h1 {
+  color: var(--scend-pink);
+}
+
+footer {
+  background-color: var(--scend-grey);
+  border-color: #d8dce2;
+}
+
+.bg-yellow-50,
+.bg-yellow-100 {
+  background-color: var(--scend-grey) !important;
+}
+
+.bg-black {
+  background-color: var(--scend-pink) !important;
+  color: white !important;
+}
+
+.bg-black:hover {
+  background-color: var(--scend-pink-dark) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--scend-pink) !important;
+  outline-color: var(--scend-pink);
+  box-shadow: 0 0 0 2px #e6007e22;
+}
+/* SCEND TOOL UI SYSTEM */
+.scend-tool-hero {
+  border: 1px solid #fce7f3;
+  background: linear-gradient(135deg, #fdf2f8 0%, #ffffff 72%);
+  box-shadow: 0 8px 24px rgb(31 41 55 / 5%);
+}
+
+.scend-tool-hero h1 {
+  font-family: inherit;
+  color: #db2777;
+  font-size: clamp(1.5rem, 2.2vw, 1.875rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.scend-tool-hero p {
+  color: #4b5563;
+  line-height: 1.65;
+}
+
+.scend-tool-page input:not([type="checkbox"]):not([type="radio"]),
+.scend-tool-page select,
+.scend-tool-page textarea {
+  border-color: #d1d5db;
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+  color: #111827;
+  font-size: 0.9375rem;
+}
+
+.scend-tool-page input:focus,
+.scend-tool-page select:focus,
+.scend-tool-page textarea:focus {
+  border-color: #db2777;
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(251 207 232 / 65%);
+}
+
+.scend-tool-page button {
+  border-radius: 1rem;
+  font-weight: 600;
+  transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.scend-tool-page button.bg-black {
+  border-color: #db2777;
+  background-color: #db2777;
+  color: #ffffff;
+}
+
+.scend-tool-page .text-pink-700 {
+  font-weight: 600;
+}
+
+.scend-tax-tool > h1 {
+  display: none;
+}
+/* SCEND TOOL BODY TYPOGRAPHY */
+.scend-tool-page {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.scend-tool-page * {
+  font-family: inherit;
+}
+/* SCEND TAX RESULT VALUES */
+.scend-tax-results strong {
+  color: #be185d;
+  font-weight: 600;
+}
+
+/* Scend tool premium hover polish v2 */
+.scend-tool-ui .rounded-3xl.bg-white:hover {
+  border-color: rgba(230, 0, 126, 0.30);
+  box-shadow: 0 20px 48px rgba(230, 0, 126, 0.18);
+}
+
+.scend-tool-ui button:not(:disabled):hover {
+  box-shadow: 0 9px 28px rgba(230, 0, 126, 0.26);
+  transform: translateY(-1px);
+}

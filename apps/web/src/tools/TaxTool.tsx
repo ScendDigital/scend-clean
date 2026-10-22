@@ -3,18 +3,18 @@
 import { useMemo, useState } from "react";
 
 /* =========================
-   SARS 2024/25 TAX ENGINE
+   SARS 2026/27 TAX ENGINE
    ========================= */
 
 function annualTaxBeforeRebates(taxable: number) {
   const brackets = [
-    { up: 237100, base: 0, rate: 0.18 },
-    { up: 370500, base: 42678, rate: 0.26, over: 237100 },
-    { up: 512800, base: 77362, rate: 0.31, over: 370500 },
-    { up: 673000, base: 121475, rate: 0.36, over: 512800 },
-    { up: 857900, base: 179147, rate: 0.39, over: 673000 },
-    { up: 1817000, base: 251258, rate: 0.41, over: 857900 },
-    { up: Infinity, base: 644489, rate: 0.45, over: 1817000 },
+    { up: 245100, base: 0, rate: 0.18 },
+    { up: 383100, base: 44118, rate: 0.26, over: 245100 },
+    { up: 530200, base: 79998, rate: 0.31, over: 383100 },
+    { up: 695800, base: 125599, rate: 0.36, over: 530200 },
+    { up: 887000, base: 185215, rate: 0.39, over: 695800 },
+    { up: 1878600, base: 259783, rate: 0.41, over: 887000 },
+    { up: Infinity, base: 666339, rate: 0.45, over: 1878600 },
   ];
 
   for (const b of brackets) {
@@ -27,9 +27,9 @@ function annualTaxBeforeRebates(taxable: number) {
 }
 
 function rebatesByAge(age: number) {
-  const primary = 17235;
-  const secondary = 9444;
-  const tertiary = 3145;
+  const primary = 17820;
+  const secondary = 9765;
+  const tertiary = 3249;
   if (age >= 75) return primary + secondary + tertiary;
   if (age >= 65) return primary + secondary;
   return primary;
@@ -37,7 +37,7 @@ function rebatesByAge(age: number) {
 
 function medicalCredits(beneficiaries: number) {
   if (beneficiaries <= 0) return 0;
-  return Math.min(beneficiaries, 2) * 364 + Math.max(0, beneficiaries - 2) * 246;
+  return Math.min(beneficiaries, 2) * 376 + Math.max(0, beneficiaries - 2) * 254;
 }
 
 /* =========================
@@ -145,7 +145,7 @@ export default function TaxTool() {
       </div>
 
       <p className="text-xs text-gray-500">
-        Educational estimator based on SARS 2024/25 tables. Not a payroll
+        Educational estimator based on SARS 2026/27 tables. Not a payroll
         substitute.
       </p>
     </div>

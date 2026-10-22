@@ -1,32 +1,39 @@
-﻿import React from "react";
+﻿import { ReactNode } from "react";
+
+type Props = {
+  title?: string;
+  subtitle?: string;
+  children: ReactNode;
+};
 
 export default function ToolLayout({
   title,
   subtitle,
   children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
+}: Props) {
   return (
-    <div className="min-h-screen w-full bg-gray-50 px-10 py-8">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
-          {title}
-        </h1>
-        {subtitle && (
-          <p className="text-gray-600 mt-2">
-            {subtitle}
-          </p>
-        )}
-      </header>
+    <div className="max-w-7xl mx-auto p-6">
 
-      <main className="w-full">
+      {(title || subtitle) && (
+        <div className="mb-6">
+          {title && (
+            <h1 className="text-2xl font-bold">
+              {title}
+            </h1>
+          )}
+
+          {subtitle && (
+            <p className="text-gray-600 mt-1">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="bg-white shadow rounded-lg p-6">
         {children}
-      </main>
+      </div>
+
     </div>
   );
 }
-
-

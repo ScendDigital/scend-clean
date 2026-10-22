@@ -1,10 +1,11 @@
-﻿// web/src/lib/tax/calc.ts
+// web/src/lib/tax/calc.ts
 
-export type TaxYear = "2024/25" | "2025/26";
+export type TaxYear = "2024/25" | "2025/26" | "2026/27";
 
 const TABLES = {
   "2024/25": { asOf: new Date(Date.UTC(2025, 1, 28)), daysInYear: 365 },
   "2025/26": { asOf: new Date(Date.UTC(2026, 1, 28)), daysInYear: 365 },
+  "2026/27": { asOf: new Date(Date.UTC(2027, 1, 28)), daysInYear: 365 },
 } as const;
 
 // SARS brackets/rebates/credits (unchanged across 2024/25 and 2025/26)
@@ -19,6 +20,17 @@ const BRACKETS = [
 ];
 const REBATES = { primary: 17_235, secondary: 9_444, tertiary: 3_145 };
 const MTC_MAIN = 364, MTC_FIRST_DEP = 364, MTC_ADDL_DEP = 246;
+const BRACKETS_2026 = [
+  { limit: 245_100, base: 0, rate: 0.18, thresh: 0 },
+  { limit: 383_100, base: 44_118, rate: 0.26, thresh: 245_100 },
+  { limit: 530_200, base: 79_998, rate: 0.31, thresh: 383_100 },
+  { limit: 695_800, base: 125_599, rate: 0.36, thresh: 530_200 },
+  { limit: 887_000, base: 185_215, rate: 0.39, thresh: 695_800 },
+  { limit: 1_878_600, base: 259_783, rate: 0.41, thresh: 887_000 },
+  { limit: Infinity, base: 666_339, rate: 0.45, thresh: 1_878_600 },
+];
+const REBATES_2026 = { primary: 17_820, secondary: 9_765, tertiary: 3_249 };
+const MTC_2026 = { taxpayer: 376, firstDependant: 376, additionalDependant: 254 };
 
 function clamp(n: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, n)); }
 
@@ -34,15 +46,15 @@ function ageFromSouthAfricanID(id: string, asOf: Date): number {
   return age;
 }
 
-function taxBeforeRebates(taxable: number): number {
-  const b = BRACKETS.find(br => taxable <= br.limit)!;
+function taxBeforeRebates(taxable: number, brackets = BRACKETS): number {
+  const b = brackets.find(br => taxable <= br.limit)!;
   return b.base + b.rate * (taxable - b.thresh);
 }
 
-function mtcPerMonth(dependants: number): number {
+function mtcPerMonth(dependants: number, credits = { taxpayer: MTC_MAIN, firstDependant: MTC_FIRST_DEP, additionalDependant: MTC_ADDL_DEP }): number {
   const firstTwo = Math.min(dependants, 2);
   const addl = Math.max(0, dependants - 2);
-  return (firstTwo >= 1 ? MTC_MAIN : 0) + (firstTwo >= 2 ? MTC_FIRST_DEP : 0) + addl * MTC_ADDL_DEP;
+  return (firstTwo >= 1 ? credits.taxpayer : 0) + (firstTwo >= 2 ? credits.firstDependant : 0) + addl * credits.additionalDependant;
 }
 
 function annualAMTC(params: {
@@ -65,9 +77,9 @@ function annualAMTC(params: {
   }
 }
 
-function allowedRetirementDeduction(remunerationAnnual: number, contributedAnnual: number): number {
+function allowedRetirementDeduction(remunerationAnnual: number, contributedAnnual: number, annualCap = 350_000): number {
   const cap27_5 = 0.275 * remunerationAnnual;
-  return Math.min(contributedAnnual, cap27_5, 350_000);
+  return Math.min(contributedAnnual, cap27_5, annualCap);
 }
 
 export function calculateAnnualPAYE(input: {
@@ -93,7 +105,12 @@ export function calculateAnnualPAYE(input: {
   monthWorkedDays?: number;
   monthDaysInPeriod?: number;
 }) {
-  const year: TaxYear = input.taxYear ?? "2024/25";
+  const year: TaxYear = input.taxYear ?? "2026/27";
+  const is2026 = year === "2026/27";
+  const activeBrackets = is2026 ? BRACKETS_2026 : BRACKETS;
+  const activeRebates = is2026 ? REBATES_2026 : REBATES;
+  const activeMTC = is2026 ? MTC_2026 : { taxpayer: MTC_MAIN, firstDependant: MTC_FIRST_DEP, additionalDependant: MTC_ADDL_DEP };
+  const retirementCap = is2026 ? 430_000 : 350_000;
   const asOf = TABLES[year].asOf;
   const daysInYear = input.yearDaysInYear ?? TABLES[year].daysInYear;
 
@@ -106,22 +123,22 @@ export function calculateAnnualPAYE(input: {
   const remunerationAnnual = input.baseAnnualIncome + (input.travelAllowanceAnnual || 0); // annual assessment basis
 
   // Retirement deduction & taxable income
-  const raAllowed = allowedRetirementDeduction(remunerationAnnual, input.retirementContribAnnual || 0);
+  const raAllowed = allowedRetirementDeduction(remunerationAnnual, input.retirementContribAnnual || 0, retirementCap);
   const taxableIncome = Math.max(0, remunerationAnnual - raAllowed);
 
   // Tax ladder
-  const taxBR = taxBeforeRebates(taxableIncome);
+  const taxBR = taxBeforeRebates(taxableIncome, activeBrackets);
 
   // Rebates (primary always; 65+/75+ only if we have an ID to infer age)
   const rebates =
-    REBATES.primary +
-    (idProvided ? (age >= 65 ? REBATES.secondary : 0) + (age >= 75 ? REBATES.tertiary : 0) : 0);
+    activeRebates.primary +
+    (idProvided ? (age >= 65 ? activeRebates.secondary : 0) + (age >= 75 ? activeRebates.tertiary : 0) : 0);
 
   const taxAfterRebates = Math.max(0, taxBR - rebates);
 
   // Medical credits (month-based per SARS)
   const months = clamp(input.monthsCovered || 0, 0, 12);
-  const mtcMonthly = mtcPerMonth(input.medDependants || 0);
+  const mtcMonthly = mtcPerMonth(input.medDependants || 0, activeMTC);
   const mtcAnnual = mtcMonthly * months;
   const medContribAnnual = (input.medContributionMonthly || 0) * months;
 

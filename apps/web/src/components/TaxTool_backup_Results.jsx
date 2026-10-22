@@ -305,7 +305,7 @@ export default function TaxTool() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
-            <div>Age (from ID): <strong>{result.idProvided ? result.age : "â€”"}</strong></div>
+            <div>Age (from ID): <strong>{result.idProvided ? result.age : "-"}</strong></div>
             <div>Months covered: <strong>{result.monthsCovered}</strong></div>
 
             {mode === "Annual" ? (

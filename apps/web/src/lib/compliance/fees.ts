@@ -1,10 +1,10 @@
-﻿/**
+/**
  * fees.ts
  * Centralise fee caps & calculation helpers. Update these values from NCR fee schedules.
  * All amounts are ZAR. VAT handling is explicit.
  */
 
-// Placeholders â€” replace with current caps.
+// Placeholders - replace with current caps.
 export const feeCaps = {
   serviceMonthlyMaxInclVAT: 69.00,  // e.g. monthly service fee cap (incl. VAT) â€“ UPDATE
   vatRate: 0.15,                    // VAT (confirm current rate)
