@@ -1,5 +1,6 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import ResultShareButton from "@/components/ResultShareButton";
 
 import * as React from "react";
 
@@ -35,6 +36,8 @@ type ClaimType =
   | "Dependants / Death";
 
 const UIF_MONTHLY_CEILING = 17712; // Adjust if UIF publishes a new ceiling.
+const UIF_SLIDING_SCALE_DAYS = 238;
+const UIF_EXTENDED_BENEFIT_RATE = 0.20;
 
 // Formatting helpers
 const ZAR = (n: number) =>
@@ -76,19 +79,29 @@ function calcUnemployment({
   const y1 = dailyFromMonthly(cappedMonthly);
   const irrPct = irrPercentFromY1(y1) / 100;
   const dailyBenefit = y1 * irrPct;
+  const extendedDailyBenefit = y1 * UIF_EXTENDED_BENEFIT_RATE;
   const creditDays = creditsFromDays(daysWorked4y);
   const estMonthly = dailyBenefit * 30;
-  const totalBenefitIfAllCreditsUsed = dailyBenefit * creditDays;
+  const slidingScaleDays = Math.min(creditDays, UIF_SLIDING_SCALE_DAYS);
+  const extendedBenefitDays = Math.max(0, creditDays - UIF_SLIDING_SCALE_DAYS);
+  const totalBenefitIfAllCreditsUsed =
+    dailyBenefit * slidingScaleDays + extendedDailyBenefit * extendedBenefitDays;
 
   const monthsUsedDays = clamp(Math.round(monthsToClaim * 30), 0, creditDays);
-  const payoutForChosenMonths = dailyBenefit * monthsUsedDays;
+  const slidingScaleClaimDays = Math.min(monthsUsedDays, UIF_SLIDING_SCALE_DAYS);
+  const extendedClaimDays = Math.max(0, monthsUsedDays - UIF_SLIDING_SCALE_DAYS);
+  const payoutForChosenMonths =
+    dailyBenefit * slidingScaleClaimDays + extendedDailyBenefit * extendedClaimDays;
 
   return {
     y1,
     irrPct: irrPct * 100,
     dailyBenefit,
+    extendedDailyBenefit,
     estMonthly,
     creditDays,
+    slidingScaleDays,
+    extendedBenefitDays,
     totalBenefitIfAllCreditsUsed,
     payoutForChosenMonths,
   };
@@ -278,7 +291,8 @@ export default function UifTool() {
       });
       notes.push(
         "Unemployment: IRR formula applied with UIF ceiling applied to salary.",
-        "Credits = floor(days worked in last 4 years Ã· 4), capped at 365 days."
+        "Credits = one day for every four contributor days, up to 365 days in the four-year period.",
+        "The IRR sliding scale applies to the first 238 benefit days; any remaining days are paid at 20%."
       );
       setResult({ type: claimType, ...r, notes });
       setDirty(false);
@@ -337,7 +351,7 @@ export default function UifTool() {
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text(`Scend â€“ UIF Estimate (${result.type})`, w / 2, 56, { align: "center" });
+    doc.text(`Scend - UIF Estimate (${result.type})`, w / 2, 56, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Generated: ${new Date().toLocaleString()}`, w / 2, 72, { align: "center" });
@@ -352,8 +366,11 @@ export default function UifTool() {
         ["Daily income Y1 (capped)", ZAR(result.y1)],
         ["IRR (%)", `${result.irrPct.toFixed(2)}%`],
         ["Daily benefit (estimate)", ZAR(result.dailyBenefit)],
-        ["Estimated monthly benefit", ZAR(result.estMonthly)],
+        ["Daily benefit after first 238 days (20%)", ZAR(result.extendedDailyBenefit)],
+        ["Estimated monthly benefit (first phase)", ZAR(result.estMonthly)],
         ["Available credit days", `${result.creditDays}`],
+        ["Days at IRR sliding scale", `${result.slidingScaleDays}`],
+        ["Days at 20% rate", `${result.extendedBenefitDays}`],
         ["Total if all credits used", ZAR(result.totalBenefitIfAllCreditsUsed)],
         ["Payout for chosen months", ZAR(result.payoutForChosenMonths)]
       );
@@ -481,7 +498,7 @@ export default function UifTool() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <section className="rounded-3xl bg-gradient-to-br from-pink-50 via-white to-white p-8 shadow-sm ring-1 ring-gray-200/60">
+      <section className="scend-tool-hero rounded-3xl bg-gradient-to-br from-pink-50 via-white to-white p-6 shadow-sm ring-1 ring-pink-100/70 md:p-8">
         <div className="max-w-3xl">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
             Scend UIF Tool
@@ -566,11 +583,11 @@ export default function UifTool() {
                     }
                   />
                   <span className="mt-1 block text-[12px] text-gray-700">
-                    Weâ€™ll show an approximate payout for these months using ~30 days per month.
+                    We will show an approximate payout for these months using about 30 days per month.
                   </span>
                 </label>
                 <div className="text-[13px] text-gray-700 self-end">
-                  Credits accrue at 1 per 4 days worked, capped at 365 days.
+                  One credit day accrues per four contributor days, up to 365 days. The first 238 benefit days use the IRR scale; any remaining days use a 20% rate.
                 </div>
               </div>
             )}
@@ -650,7 +667,8 @@ export default function UifTool() {
               >
                 Clear
               </button>
-              <button
+              {result && (<>
+<button
                 onClick={onPDF}
                 disabled={!result}
                 title={!result ? "Click Calculate first" : "Export UIF estimate + forms to PDF"}
@@ -660,9 +678,11 @@ export default function UifTool() {
               >
                 Export PDF
               </button>
+<ResultShareButton title="Scend UIF Tool" disabled={!result}  resultSelector=".scend-uif-results"/>
+</>)}
               {dirty && (
                 <span className="text-xs text-amber-600 self-center">
-                  Values changed â€” click <b>Calculate</b>.
+                  Values changed - click <b>Calculate</b>.
                 </span>
               )}
             </div>
@@ -678,7 +698,7 @@ export default function UifTool() {
               Enter details and click <strong>Calculate</strong> to see results.
             </div>
           ) : result.infoOnly ? (
-            <div className="mt-4 grid gap-2 text-[15px]">
+            <div className="mt-4 grid gap-2 text-[15px] [&_span:last-child]:font-semibold [&_span:last-child]:text-pink-700">
               <div className="rounded-xl bg-pink-50/70 px-3 py-2">
                 Dependants / Death claims are calculated as lump-sum benefits. Use forms UI-2.5 / UI-2.6 with death and
                 relationship documents and stamped banking details.
@@ -695,7 +715,7 @@ export default function UifTool() {
               )}
             </div>
           ) : result.type === "Unemployment" ? (
-            <div className="mt-4 grid gap-2 text-[15px]">
+            <div className="mt-4 grid gap-2 text-[15px] [&_span:last-child]:font-semibold [&_span:last-child]:text-pink-700">
               <div className="flex items-center justify-between">
                 <span>Daily income Y1 (capped)</span>
                 <span>{ZAR(result.y1)}</span>
@@ -705,17 +725,33 @@ export default function UifTool() {
                 <span>{result.irrPct.toFixed(2)}%</span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Daily benefit (estimate)</span>
+                <span>Daily benefit (first 238 days)</span>
                 <span>{ZAR(result.dailyBenefit)}</span>
               </div>
+              {result.extendedBenefitDays > 0 && (
+                <div className="flex items-center justify-between">
+                  <span>Daily benefit (remaining days at 20%)</span>
+                  <span>{ZAR(result.extendedDailyBenefit)}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
-                <span>Estimated monthly benefit</span>
+                <span>Estimated monthly benefit (first phase)</span>
                 <span>{ZAR(result.estMonthly)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Available credit days</span>
                 <span>{result.creditDays}</span>
               </div>
+              <div className="flex items-center justify-between">
+                <span>Credit days at IRR sliding scale</span>
+                <span>{result.slidingScaleDays}</span>
+              </div>
+              {result.extendedBenefitDays > 0 && (
+                <div className="flex items-center justify-between">
+                  <span>Credit days at 20%</span>
+                  <span>{result.extendedBenefitDays}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span>Total if all credits used</span>
                 <span>{ZAR(result.totalBenefitIfAllCreditsUsed)}</span>
@@ -737,7 +773,7 @@ export default function UifTool() {
               )}
             </div>
           ) : (
-            <div className="mt-4 grid gap-2 text-[15px]">
+            <div className="mt-4 grid gap-2 text-[15px] [&_span:last-child]:font-semibold [&_span:last-child]:text-pink-700">
               <div className="flex items-center justify-between">
                 <span>Daily benefit (66% capped)</span>
                 <span>{ZAR(result.dailyBenefit)}</span>
@@ -793,7 +829,7 @@ export default function UifTool() {
             {checklist?.length ? (
               <>
                 <div className="mt-4 text-[15px] font-semibold">
-                  Required Documents â€“ {claimType}
+                  Required Documents - {claimType}
                 </div>
                 <ul className="list-disc pl-5 space-y-1 text-[14px]">
                   {checklist.map((c) => (

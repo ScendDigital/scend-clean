@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useMemo, useState } from "react";
 
@@ -105,8 +105,8 @@ export default function UIFTool() {
           <h2>Documents Required</h2>
           <ul>
             <li>SA ID/Smart ID (or valid passport + work permit)</li>
-            <li>UI-19 â€” Employer declaration (employment start/end, reason for termination)</li>
-            <li>UI-2.8 â€” Banking details form (stamped by bank)</li>
+            <li>UI-19 - Employer declaration (employment start/end, reason for termination)</li>
+            <li>UI-2.8 - Banking details form (stamped by bank)</li>
             <li>Recent bank statement</li>
             <li>Payslips / proof of earnings for the last 6 months</li>
             <li>Proof of termination (retrenchment/contract expiry/closure letter)</li>
@@ -279,8 +279,8 @@ export default function UIFTool() {
         <h3 className="text-xl font-semibold mb-3">Documents Required Before Visiting Labour (with download links)</h3>
         <ul className="list-disc pl-5 text-sm space-y-1">
           <li>SA ID/Smart ID (or valid passport + work permit for foreign nationals)</li>
-          <li>UI-19 â€” Employer declaration (employment start/end, reason for termination). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-19</a></li>
-          <li>UI-2.8 â€” Banking details form (stamped by bank). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-2.8</a></li>
+          <li>UI-19 - Employer declaration (employment start/end, reason for termination). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-19</a></li>
+          <li>UI-2.8 - Banking details form (stamped by bank). <a target="_blank" rel="noreferrer noopener" href="#">Download UI-2.8</a></li>
           <li>Recent bank statement (shows account holder & number)</li>
           <li>Payslips / proof of earnings for the last 6 months</li>
           <li>Proof of termination (retrenchment/contract expiry/closure letter)</li>

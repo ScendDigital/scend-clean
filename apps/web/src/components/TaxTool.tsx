@@ -1,15 +1,16 @@
 // web/src/components/TaxTool.jsx
 "use client";
+import ResultShareButton from "@/components/ResultShareButton";
 
 import { useEffect, useState } from "react";
-import { calculateAnnualPAYE } from "../lib/tax/calc";
+import { calculateAnnualPAYE, type TaxYear } from "../lib/tax/calc";
 
 const ZAR = new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" });
 function num(v) { const n = parseFloat(String(v).replace(/[, ]/g, "")); return Number.isFinite(n) ? n : 0; }
 
 export default function TaxTool() {
   // Mode & tax year
-  const [taxYear, setTaxYear] = useState("2024/25");   // "2024/25" | "2025/26"
+  const [taxYear, setTaxYear] = useState<TaxYear>("2026/27");
   const [mode, setMode] = useState("Annual");          // "Annual" | "Monthly"
 
   // Income & travel (user input)
@@ -122,19 +123,19 @@ export default function TaxTool() {
     setHasCalculated(false);
   };
 
-  const onExportPDF = () => { window.print(); };
+  const onExportPDF = () => { if (!result) return; window.print(); };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-semibold">Scend â€¢ SARS PAYE</h1>
-
+    <div className="scend-tax-tool mx-auto w-full max-w-5xl space-y-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-gray-200/70 md:p-8">
+      <h1 className="text-2xl font-semibold">Scend - SARS PAYE</h1>
       {/* Year & Mode */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <label className="block">
           <div className="text-sm font-medium mb-1">Tax Year</div>
-          <select className="border rounded p-2 w-full" value={taxYear} onChange={(e) => setTaxYear(e.target.value)}>
+          <select className="border rounded p-2 w-full" value={taxYear} onChange={(e) => setTaxYear(e.target.value as TaxYear)}>
             <option value="2024/25">2024/25</option>
             <option value="2025/26">2025/26</option>
+            <option value="2026/27">2026/27</option>
           </select>
         </label>
 
@@ -176,7 +177,7 @@ export default function TaxTool() {
 
       <label className="inline-flex items-center gap-2">
         <input type="checkbox" checked={deem80} onChange={(e) => setDeem80(e.target.checked)} />
-        <span>Employer deems â‰¥80% business use (20% taxable for PAYE)</span>
+        <span>Employer deems at least 80% business use (20% taxable for PAYE)</span>
       </label>
 
       {/* Retirement & PAYE paid */}
@@ -221,7 +222,7 @@ export default function TaxTool() {
         {mode === "Annual" && (
           <>
             <label className="block">
-              <div className="text-sm font-medium mb-1">Months Covered (1â€“12)</div>
+              <div className="text-sm font-medium mb-1">Months Covered (1-12)</div>
               <input className="border rounded p-2 w-full" placeholder="12" value={months} onChange={(e) => setMonths(e.target.value)} />
             </label>
 
@@ -245,8 +246,7 @@ export default function TaxTool() {
           <span>Disability (you/spouse/child)</span>
         </label>
       </div>
-
-      {/* Pro-rata controls â€“ per mode */}
+      {/* Pro-rata controls by mode */}
       {mode === "Annual" ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <label className="inline-flex items-center gap-2">
@@ -286,15 +286,17 @@ export default function TaxTool() {
       {/* Actions */}
       <div className="flex gap-3">
         <button className="px-4 py-2 rounded bg-black text-white" onClick={onCalculate}>Calculate</button>
-        <button className="px-4 py-2 rounded border" onClick={onExportPDF}>Export PDF</button>
-        <button className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-gray-900 bg-white ring-1 ring-gray-200 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-pink-200 disabled:opacity-50px-4 py-2 rounded border
+        {result && (<>
+<button disabled={!result} className="px-4 py-2 rounded border" onClick={onExportPDF}>Export PDF</button>
+<ResultShareButton title="Scend Tax Tool" disabled={!result}  resultSelector=".scend-tax-results"/>
+</>)}
       </div>
 
       {/* Results */}
       {result && (
-        <div className="mt-6 border rounded p-4">
+        <div className="scend-tax-results mt-6 border rounded p-4">
           <div className="text-lg font-semibold mb-2">
-            {mode === "Annual" ? `Breakdown (${result.taxYear}) â€¢ Annual` : `Breakdown (${result.taxYear}) â€¢ Monthly`}
+            {mode === "Annual" ? `Breakdown (${result.taxYear}) - Annual` : `Breakdown (${result.taxYear}) - Monthly`}
           </div>
 
           {/* ID/Rebate note */}
@@ -305,7 +307,7 @@ export default function TaxTool() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
-            <div>Age (from ID): <strong>{result.idProvided ? result.age : "â€”"}</strong></div>
+            <div>Age (from ID): <strong>{result.idProvided ? result.age : "-"}</strong></div>
             <div>Months covered: <strong>{result.monthsCovered}</strong></div>
 
             {mode === "Annual" ? (
@@ -321,7 +323,7 @@ export default function TaxTool() {
                 <div>Annual tax after credits: <strong>{ZAR.format(result.taxAfterCredits)}</strong></div>
                 {partialYearByDays && (
                   <div>
-                    Annual tax (pro-rated by days Ã— {result.annualProrationFactorDays.toFixed(3)}):{" "}
+                    Annual tax (pro-rated by days x {result.annualProrationFactorDays.toFixed(3)}):{" "}
                     <strong>{ZAR.format(result.annualTaxProratedDays)}</strong>
                   </div>
                 )}
@@ -345,7 +347,7 @@ export default function TaxTool() {
           <div className="mt-3 text-sm text-gray-600">
             {mode === "Annual"
               ? "Notes: Annual view uses full-year figures. Annual pro-rata (if selected) scales the final annual tax by your employed days in the tax year. Medical credits follow SARS monthly rules."
-              : "Notes: Monthly view accepts per-month figures and annualises them under the hood. Monthly PAYE excludes AMTC (assessment-only) and includes the monthly MTC. Day-based pro-rata scales this monthâ€™s PAYE by worked-days/period-days."}
+              : "Notes: Monthly view accepts per-month figures and annualises them under the hood. Monthly PAYE excludes AMTC (assessment-only) and includes the monthly MTC. Day-based pro-rata scales this month's PAYE by worked-days/period-days."}
           </div>
         </div>
       )}

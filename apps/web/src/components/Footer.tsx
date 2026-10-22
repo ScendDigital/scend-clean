@@ -1,10 +1,9 @@
-﻿export default function Footer() {
+export default function Footer() {
   return (
     <footer className="w-full border-t border-pink-100 bg-white py-10 px-6">
 
       <div className="max-w-6xl mx-auto flex flex-col items-center gap-10">
-
-        {/* QUICK LINKS â€” TOP CENTER */}
+        {/* QUICK LINKS - TOP CENTER */}
         <div className="text-center text-[11px] text-gray-700">
           <h3 className="text-sm font-semibold text-pink-600 mb-2">Quick Links</h3>
 
@@ -19,8 +18,7 @@
             <div><a href="/contact" className="hover:text-pink-600 transition">Contact Us</a></div>
           </div>
         </div>
-
-        {/* ADDRESS â€” CENTER BELOW QUICK LINKS */}
+        {/* ADDRESS - CENTER BELOW QUICK LINKS */}
         <div className="text-center text-[11px] text-gray-700">
           <h3 className="text-sm font-semibold text-pink-600 mb-2">Address</h3>
 
@@ -37,7 +35,7 @@
 
       {/* COPYRIGHT */}
       <div className="text-center text-gray-500 text-[11px] mt-10">
-        Â© {new Date().getFullYear()} Scend. All rights reserved.
+        (c) {new Date().getFullYear()} Scend. All rights reserved.
       </div>
 
     </footer>

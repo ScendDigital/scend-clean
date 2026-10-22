@@ -1,10 +1,12 @@
-﻿import "./globals.css";
+import "./globals.css";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import SharedResultViewer from "@/components/SharedResultViewer";
+
 
 export const metadata = {
   title: "Scend",
-  description: "Digital â€¢ Wellness â€¢ Publishing",
+  description: "Digital | Wellness | Publishing",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,10 +16,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NavBar />
 
         <main className="px-4 py-6 flex flex-col items-center">
+          <SharedResultViewer />
           <div className="w-full max-w-5xl mx-auto">
             {children}
           </div>
-        </main>
+      </main>
 
         <Footer />
       </body>

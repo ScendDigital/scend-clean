@@ -1,11 +1,12 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import ResultShareButton from "@/components/ResultShareButton";
 
 import * as React from "react";
 
 /* ------------------------------------------------------------------
    SARS tables & helpers
-   NOTE: 2025/26 is provisional â€” mirrors 2024/25 until official release.
+   NOTE: 2025/26 is provisional - mirrors 2024/25 until official release.
    MTC: R364 (main+first), R246 (each additional) per month.
    ------------------------------------------------------------------ */
 
@@ -265,7 +266,7 @@ export default function TaxTool() {
     const notes: string[] = [];
 
     if (year === "2025/26") {
-      notes.push("2025/26 uses 2024/25 tables provisionally â€” update once official figures are confirmed.");
+      notes.push("2025/26 uses 2024/25 tables provisionally - update once official figures are confirmed.");
     }
 
     // Proration factor m
@@ -389,7 +390,7 @@ export default function TaxTool() {
   }
 
   async function onPDF() {
-    if (!computed) return alert("Click Calculate first.");
+    if (!computed || dirty) return alert("Calculate the current values first.");
 
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
@@ -399,7 +400,7 @@ export default function TaxTool() {
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text(`Scend â€“ SARS Tax Estimate (${f.year})`, w / 2, 56, { align: "center" });
+    doc.text(`Scend - SARS Tax Estimate (${f.year})`, w / 2, 56, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(`Generated: ${new Date().toLocaleString()}`, w / 2, 72, { align: "center" });
@@ -464,39 +465,20 @@ export default function TaxTool() {
   }
 
   /* ------------------------------------------------------------------
-     UI â€” Premium look & feel (matching LoanTool)
+     UI - Premium look & feel (matching LoanTool)
      ------------------------------------------------------------------ */
 
   if (!mounted) {
     return (
       <div className="space-y-8">
-        <section className="rounded-3xl bg-gradient-to-br from-pink-50 via-white to-white p-8 shadow-sm ring-1 ring-gray-200/60">
-          <div className="max-w-3xl">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
-              Scend Tax Tool
-            </h1>
-            <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
-              Loading tax calculatorâ€¦
-            </p>
-          </div>
-        </section>
+        <p className="text-sm text-gray-600">Loading tax calculator...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
-      {/* Premium header */}
-      <section className="rounded-3xl bg-gradient-to-br from-pink-50 via-white to-white p-8 shadow-sm ring-1 ring-gray-200/60">
-        <div className="max-w-3xl">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
-            Scend Tax Tool
-          </h1>
-          <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
-            SARS-style PAYE with age rebates, medical credits, RA limits, <em>Monthly day-proration</em> or <em>Yearly months</em>, and Two-Pot / Lump-Sum calculations.
-          </p>
-        </div>
-      </section>
+
 
       <section className="grid gap-6 md:grid-cols-2">
         {/* Form */}
@@ -723,21 +705,23 @@ export default function TaxTool() {
 
             {/* Buttons */}
             <div className="mt-2 flex flex-wrap gap-3">
-              <button
+              <button type="button"
                 onClick={onCompute}
                 className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-white bg-pink-600 hover:bg-pink-700"
               >
                 Calculate
               </button>
 
-              <button
+              <button type="button"
                 onClick={onClear}
                 className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-gray-900 bg-white ring-1 ring-gray-200 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-pink-200"
               >
                 Clear
               </button>
 
-              <button
+              {computed && !dirty && (
+<>
+                  <button type="button"
                 onClick={onPDF}
                 className="glow rounded-2xl px-4 py-2 text-sm font-semibold text-gray-900 bg-white ring-1 ring-gray-200 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-pink-200"
                 disabled={!computed}
@@ -745,10 +729,17 @@ export default function TaxTool() {
               >
                 Export PDF
               </button>
+                  <ResultShareButton
+                    title="Scend Tax Tool"
+                    resultSelector=".scend-tax-results"
+                    disabled={!computed || dirty}
+                  />
+                </>
+              )}
 
               {dirty && (
                 <span className="text-xs text-amber-600 self-center">
-                  Values changed â€” click <b>Calculate</b>.
+                  Values changed - click <b>Calculate</b>.
                 </span>
               )}
             </div>
@@ -756,7 +747,7 @@ export default function TaxTool() {
         </div>
 
         {/* Results */}
-        <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-gray-200/70">
+        <div className="scend-tax-results rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-gray-200/70">
           <h2 className="text-lg font-semibold text-gray-900">Results</h2>
 
           {!computed ? (
@@ -764,7 +755,7 @@ export default function TaxTool() {
               Enter details and click <strong>Calculate</strong> to see results.
             </div>
           ) : (
-            <div className="mt-4 grid gap-2 text-[15px]">
+            <div className="mt-4 grid gap-2 text-[15px] [&_span:last-child]:font-semibold [&_span:last-child]:text-pink-700">
               <div className="flex items-center justify-between">
                 <span>Taxable Before RA</span>
                 <span>{currency(computed.taxableAnnualBeforeRA)}</span>

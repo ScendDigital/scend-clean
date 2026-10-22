@@ -1,9 +1,9 @@
-﻿import { caps, mortgageCapAPRDecimal } from "./caps";
+import { caps, mortgageCapAPRDecimal, ncaMaxAPRDecimal } from "./caps";
 
-export function clampRateToCap(requestedAPR: number, loanClass: "unsecured" | "vehicle" | "mortgage", repoPct?: number) {
-  let cap = caps.unsecured.maxAPR;
-  if (loanClass === "vehicle") cap = caps.vehicle.maxAPR;
-  if (loanClass === "mortgage") cap = mortgageCapAPRDecimal(repoPct);
+export function clampRateToCap(requestedAPR: number, loanClass: "unsecured" | "vehicle" | "mortgage" | "revolving", repoPct?: number) {
+  const cap = loanClass === "mortgage"
+    ? mortgageCapAPRDecimal(repoPct)
+    : ncaMaxAPRDecimal(loanClass, repoPct);
   return Math.min(Math.max(0, requestedAPR), cap);
 }
 
@@ -12,18 +12,18 @@ export function serviceFeeMonthly(requested: number) {
   return Math.min(Math.max(0, requested), cap);
 }
 
-/** Example initiation fee; set caps per NCR schedule for production. */
+/** Initiation fee limits under NCA Regulation 42, Table B. */
 export function initiationFee(
   loanType: "Personal Loan" | "Credit Card" | "Vehicle Finance" | "Home Loan",
   amount: number
 ) {
   const amt = Math.max(0, amount);
-  const rules =
-    loanType === "Vehicle Finance" ? caps.initiationFee.vehicle :
-    loanType === "Home Loan"       ? caps.initiationFee.mortgage :
-    caps.initiationFee.unsecured;
-  if (!rules) return 0;
-  const fee = rules.base + rules.pct * amt;
+  if (amt === 0) return 0;
+  const rules = loanType === "Home Loan" ? caps.initiationFee.mortgage
+    : loanType === "Credit Card" ? caps.initiationFee.revolving
+    : loanType === "Vehicle Finance" ? caps.initiationFee.vehicle
+    : caps.initiationFee.unsecured;
+  const fee = rules.base + rules.pct * Math.max(amt - rules.threshold, 0);
   return Math.min(fee, rules.max);
 }
 
@@ -48,9 +48,10 @@ export const disposableIncome = (net: number, expensesUsed: number, existingDebt
 
 /** Max APR (decimal) by loan type */
 export function getCapAPRByLoanType(loanType: string, repoPct?: number) {
-  if (loanType === "Vehicle Finance") return caps.vehicle.maxAPR;
+  if (loanType === "Vehicle Finance") return ncaMaxAPRDecimal("vehicle", repoPct);
   if (loanType === "Home Loan")       return mortgageCapAPRDecimal(repoPct);
-  return caps.unsecured.maxAPR; // Personal/Credit Card
+  if (loanType === "Credit Card") return ncaMaxAPRDecimal("revolving", repoPct);
+  return ncaMaxAPRDecimal("unsecured", repoPct);
 }
 
 
