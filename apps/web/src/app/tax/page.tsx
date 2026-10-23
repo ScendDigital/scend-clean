@@ -1,6 +1,6 @@
 "use client";
 
-import TaxTool from "@/components/tax/TaxTool";
+import TaxTool from "@/components/TaxTool";
 
 export default function Page() {
   return (
