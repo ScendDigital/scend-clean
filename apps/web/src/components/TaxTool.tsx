@@ -123,6 +123,14 @@ export default function TaxTool() {
     setHasCalculated(false);
   };
 
+  const monthlyPayeDisplayed = result?.age >= 65
+    ? result.monthlyPAYE_with_AMTC
+    : result?.monthlyPAYE_without_AMTC;
+  const monthlyPayeProrataDisplayed = result?.age >= 65
+    ? result.monthlyPAYEProrataDays
+    : result?.monthlyPAYEProrataDaysNoAMTC;
+  const hasMonthProrataDays = num(monthWorkedDays) > 0 && num(monthDaysInPeriod) > 0;
+
   const onExportPDF = () => { if (!result) return; window.print(); };
 
   return (
@@ -308,7 +316,9 @@ export default function TaxTool() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
             <div>Age (from ID): <strong>{result.idProvided ? result.age : "-"}</strong></div>
-            <div>Months covered: <strong>{result.monthsCovered}</strong></div>
+            <div>
+              {mode === "Annual" ? "Months covered" : "Medical scheme months assumed"}: <strong>{result.monthsCovered}</strong>
+            </div>
 
             {mode === "Annual" ? (
               <>
@@ -332,11 +342,11 @@ export default function TaxTool() {
             ) : (
               <>
                 <div>Remuneration (PAYE basis): <strong>{ZAR.format(result.remunerationPAYE)}</strong></div>
-                <div>Monthly PAYE (approx, no AMTC): <strong>{ZAR.format(result.monthlyPAYE_without_AMTC)}</strong></div>
-                {prorataMonthByDays && (
+                <div>Monthly PAYE (estimate): <strong>{ZAR.format(monthlyPayeDisplayed)}</strong></div>
+                {prorataMonthByDays && hasMonthProrataDays && (
                   <div>
                     Pro-rata this month ({(result.monthProrationPctDays * 100).toFixed(0)}%):{" "}
-                    <strong>{ZAR.format(result.monthlyPAYEProrataDaysNoAMTC)}</strong>
+                    <strong>{ZAR.format(monthlyPayeProrataDisplayed)}</strong>
                   </div>
                 )}
                 <div>MTC (monthly): <strong>{ZAR.format(result.mtcMonthly)}</strong></div>
@@ -347,7 +357,7 @@ export default function TaxTool() {
           <div className="mt-3 text-sm text-gray-600">
             {mode === "Annual"
               ? "Notes: Annual view uses full-year figures. Annual pro-rata (if selected) scales the final annual tax by your employed days in the tax year. Medical credits follow SARS monthly rules."
-              : "Notes: Monthly view accepts per-month figures and annualises them under the hood. Monthly PAYE excludes AMTC (assessment-only) and includes the monthly MTC. Day-based pro-rata scales this month's PAYE by worked-days/period-days."}
+              : "Notes: Monthly income and retirement contributions are annualised. Medical scheme credits assume 12 months of cover. The 65+ contribution-related additional medical credit is included where applicable; out-of-pocket medical expenses are not included in monthly mode. Daily pro-rata is a simple estimate, not a payroll-period calculation."}
           </div>
         </div>
       )}
