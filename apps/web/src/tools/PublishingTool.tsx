@@ -1,230 +1,254 @@
-﻿"use client";
+"use client";
 
-import * as React from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const glowBtn = (base: string) =>
-  `glow rounded-2xl px-4 py-2 text-sm font-semibold ${base}`;
+type Format = "ebook" | "print" | "audio";
+type Project = {
+  title: string;
+  author: string;
+  genre: string;
+  stage: string;
+  wordCount: string;
+  route: string;
+  formats: Format[];
+  completed: string[];
+};
+type Task = { id: string; group: string; title: string; detail: string; formats?: Format[] };
+
+const STORAGE_KEY = "scend-publishing-planner-v1";
+const DEFAULT_PROJECT: Project = {
+  title: "",
+  author: "",
+  genre: "",
+  stage: "Draft in progress",
+  wordCount: "",
+  route: "Not decided yet",
+  formats: ["ebook", "print"],
+  completed: [],
+};
+
+const TASKS: Task[] = [
+  { id: "edit", group: "Manuscript", title: "Revise and edit the manuscript", detail: "Complete structural edits first, then line editing and proofreading." },
+  { id: "proof", group: "Manuscript", title: "Proofread the final text", detail: "Check names, dates, quotations, chapter order, and consistency after the final edit." },
+  { id: "rights", group: "Book details", title: "Confirm ownership and permissions", detail: "Check image, quotation, music, and contributor permissions. Keep written approvals." },
+  { id: "metadata", group: "Book details", title: "Prepare title, subtitle, description, and author bio", detail: "Use consistent book details across the cover, distributor listing, and promotional material." },
+  { id: "isbn", group: "Book details", title: "Check ISBN and barcode requirements", detail: "Requirements vary by format, territory, and distributor. Confirm before ordering or assigning an ISBN." },
+  { id: "cover", group: "Book files", title: "Prepare and review the cover", detail: "Check that the artwork, title, author name, and trim or platform specifications are correct." },
+  { id: "ebook-file", group: "Book files", title: "Create and validate the eBook file", detail: "Export an EPUB or distributor-accepted file and review it on different screen sizes.", formats: ["ebook"] },
+  { id: "ebook-upload", group: "Distribution", title: "Upload and preview the eBook listing", detail: "Review the preview, metadata, pricing, territories, and publication settings before release.", formats: ["ebook"] },
+  { id: "print-layout", group: "Book files", title: "Format the print interior", detail: "Confirm trim size, margins, page numbering, fonts, and the final page count.", formats: ["print"] },
+  { id: "print-cover", group: "Book files", title: "Build the print cover from final specifications", detail: "Use the selected printer's template after the interior page count and paper choice are final.", formats: ["print"] },
+  { id: "print-proof", group: "Distribution", title: "Order and review a print proof", detail: "Check the physical copy for layout, cut, colour, and cover alignment before approving it.", formats: ["print"] },
+  { id: "audio-rights", group: "Audio edition", title: "Confirm audiobook rights and narration plan", detail: "Confirm rights, narrator agreement, pronunciation notes, and the retailer's audio requirements.", formats: ["audio"] },
+  { id: "audio-master", group: "Audio edition", title: "Record, edit, and quality-check audio", detail: "Review each finished file for clarity, consistent levels, correct chapter order, and silence requirements.", formats: ["audio"] },
+  { id: "launch", group: "Launch", title: "Plan the launch and reader outreach", detail: "Prepare a launch date, sample content, retailer links, and a simple follow-up plan." },
+];
+
+const inputClass = "mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-pink-500 focus:ring-4 focus:ring-pink-100";
+const labelClass = "block text-sm font-medium text-gray-800";
+const buttonClass = "inline-flex min-h-11 items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-700";
+
+function formatName(format: Format) {
+  return format === "ebook" ? "eBook" : format === "print" ? "Print book" : "Audiobook";
+}
 
 export default function PublishingTool() {
+  const [project, setProject] = useState<Project>(DEFAULT_PROJECT);
+  const [ready, setReady] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Partial<Project>;
+        setProject({ ...DEFAULT_PROJECT, ...parsed });
+      }
+    } catch {
+      setNotice("We could not load the saved project. You can start a fresh plan.");
+    }
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+    } catch {
+      setNotice("This browser could not save the plan locally. You can still download a copy.");
+    }
+  }, [project, ready]);
+
+  const activeTasks = useMemo(
+    () => TASKS.filter((task) => !task.formats || task.formats.some((format) => project.formats.includes(format))),
+    [project.formats],
+  );
+  const completedCount = activeTasks.filter((task) => project.completed.includes(task.id)).length;
+  const progress = activeTasks.length ? Math.round((completedCount / activeTasks.length) * 100) : 0;
+  const nextTask = activeTasks.find((task) => !project.completed.includes(task.id));
+  const groups = [...new Set(activeTasks.map((task) => task.group))];
+
+  function update<K extends keyof Project>(key: K, value: Project[K]) {
+    setProject((current) => ({ ...current, [key]: value }));
+    setNotice("");
+  }
+
+  function toggleFormat(format: Format) {
+    setProject((current) => {
+      const formats = current.formats.includes(format)
+        ? current.formats.filter((item) => item !== format)
+        : [...current.formats, format];
+      return { ...current, formats: formats.length ? formats : current.formats };
+    });
+    setNotice("");
+  }
+
+  function toggleTask(id: string) {
+    setProject((current) => ({
+      ...current,
+      completed: current.completed.includes(id)
+        ? current.completed.filter((item) => item !== id)
+        : [...current.completed, id],
+    }));
+  }
+
+  function buildPlanText() {
+    const title = project.title.trim() || "Untitled book project";
+    const selectedFormats = project.formats.map(formatName).join(", ") || "Not selected";
+    const lines = [
+      `Scend Publishing Plan: ${title}`,
+      `Author: ${project.author || "Not entered"}`,
+      `Genre: ${project.genre || "Not entered"}`,
+      `Stage: ${project.stage}`,
+      `Formats: ${selectedFormats}`,
+      `Publishing route: ${project.route}`,
+      `Approximate word count: ${project.wordCount || "Not entered"}`,
+      `Checklist progress: ${completedCount}/${activeTasks.length} (${progress}%)`,
+      "",
+      ...groups.flatMap((group) => [
+        `${group}`,
+        ...activeTasks.filter((task) => task.group === group).map((task) => `${project.completed.includes(task.id) ? "[x]" : "[ ]"} ${task.title} - ${task.detail}`),
+        "",
+      ]),
+      "Prepared with the Scend Publishing Planner. Confirm distributor specifications before release.",
+    ];
+    return lines.join("\n");
+  }
+
+  async function copyPlan() {
+    try {
+      await navigator.clipboard.writeText(buildPlanText());
+      setNotice("Your publishing plan was copied to the clipboard.");
+    } catch {
+      setNotice("Clipboard access is unavailable. Use Download plan to save a copy.");
+    }
+  }
+
+  function downloadPlan() {
+    const blob = new Blob([buildPlanText()], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${(project.title.trim() || "scend-publishing-plan").replace(/[^a-z0-9-_]+/gi, "-")}-publishing-plan.txt`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setNotice("Your publishing plan has been downloaded.");
+  }
+
+  function contactScend(channel: "email" | "whatsapp") {
+    const subject = `Publishing enquiry: ${project.title.trim() || "New book project"}`;
+    const body = `Hello Scend,\n\nI would like to discuss a publishing project.\n\n${buildPlanText()}\n\nPlease let me know the next steps.`;
+    const url = channel === "email"
+      ? `mailto:motlatsi.lenyatsa@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      : `https://wa.me/27728037223?text=${encodeURIComponent(body)}`;
+    window.open(url, channel === "email" ? "_self" : "_blank", "noopener,noreferrer");
+  }
+
+  function clearProject() {
+    setProject(DEFAULT_PROJECT);
+    setNotice("Project details cleared. The blank plan is saved on this device.");
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Premium header */}
-      <section className="rounded-3xl bg-gradient-to-br from-pink-50 via-white to-white p-8 shadow-sm ring-1 ring-gray-200/60">
-        <div className="max-w-3xl">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
-            Scend Publishing
-          </h1>
-          <p className="mt-3 text-[15px] leading-relaxed text-gray-700">
-            Professional, author-centred publishing support Ã¢â‚¬â€ from manuscript
-            clean-up to print-ready files and launch strategy. Designed to work
-            hand-in-hand with Scend&apos;s digital tools and wellness focus.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <button
-              className={glowBtn(
-                "text-white bg-pink-600 hover:bg-pink-700"
-              )}
-            >
-              Request publishing consult
-            </button>
-            <button
-              className={glowBtn(
-                "text-gray-900 bg-white ring-1 ring-gray-200 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-pink-200"
-              )}
-            >
-              Download sample package
-            </button>
-          </div>
+    <div className="space-y-7">
+      <section className="overflow-hidden rounded-3xl border border-pink-100 bg-gradient-to-br from-pink-50 via-white to-gray-50 px-6 py-8 shadow-[0_14px_40px_rgba(31,41,55,0.07)] sm:px-9 sm:py-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-pink-700">Scend Publishing</p>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-pink-700 sm:text-4xl">Scend Publishing Planner</h1>
+        <p className="mt-3 max-w-3xl text-[15px] leading-7 text-gray-600">Build a practical checklist for your book, track production progress, and prepare a clear publishing enquiry. Your project is saved in this browser only.</p>
+        <div className="mt-6 flex flex-wrap gap-2 text-xs font-medium text-gray-700">
+          {["Manuscript", "Book files", "Distribution", "Launch"].map((item) => <span key={item} className="rounded-full border border-pink-100 bg-white/80 px-3 py-1.5">{item}</span>)}
         </div>
       </section>
 
-      {/* Packages + Info */}
-      <section className="grid gap-6 xl:grid-cols-[2fr,1.4fr]">
-        {/* Packages */}
-        <div className="rounded-3xl bg-white p-6 md:p-8 shadow-sm ring-1 ring-gray-200/70">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Publishing packages
-          </h2>
-
-          <p className="mt-2 text-[14px] text-gray-700">
-            These are guideline bundles. In practice we customise based on your
-            manuscript, budget, and where you are in your journey.
-          </p>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            {/* Starter */}
-            <article className="flex flex-col rounded-2xl border border-gray-200 bg-gray-50/60 p-4">
-              <h3 className="text-md font-semibold text-gray-900">
-                Starter Edit
-              </h3>
-              <p className="mt-2 text-[13px] text-gray-700">
-                Ideal if your book is drafted but needs a professional clean-up
-                and structure check.
-              </p>
-              <ul className="mt-3 space-y-1 text-[13px] text-gray-800">
-                <li>Ã¢â‚¬Â¢ Manuscript review &amp; high-level feedback</li>
-                <li>Ã¢â‚¬Â¢ Light language &amp; consistency edit</li>
-                <li>Ã¢â‚¬Â¢ Basic interior formatting (Word / PDF)</li>
-                <li>Ã¢â‚¬Â¢ Simple front-matter &amp; back-matter setup</li>
-              </ul>
-              <div className="mt-4 text-[12px] text-gray-600">
-                From <span className="font-semibold">R</span> (quote on request)
-              </div>
-            </article>
-
-            {/* Standard */}
-            <article className="flex flex-col rounded-2xl border border-pink-200 bg-pink-50/50 p-4 shadow-[0_8px_24px_rgba(219,39,119,0.12)]">
-              <div className="inline-flex items-center gap-2 self-start rounded-full bg-pink-600/10 px-3 py-1 text-[11px] font-semibold text-pink-700">
-                Most popular
-              </div>
-              <h3 className="mt-2 text-md font-semibold text-gray-900">
-                Scend Author
-              </h3>
-              <p className="mt-2 text-[13px] text-gray-700">
-                Full service for authors who want a serious, professional book
-                that can live on Amazon and local print.
-              </p>
-              <ul className="mt-3 space-y-1 text-[13px] text-gray-800">
-                <li>Ã¢â‚¬Â¢ Detailed edit &amp; clean-up</li>
-                <li>Ã¢â‚¬Â¢ Professional interior layout (print &amp; eBook)</li>
-                <li>Ã¢â‚¬Â¢ Cover guidance (Canva / designer-ready)</li>
-                <li>Ã¢â‚¬Â¢ ISBN &amp; metadata guidance</li>
-                <li>Ã¢â‚¬Â¢ Upload support (e.g. Amazon KDP)</li>
-              </ul>
-              <div className="mt-4 text-[12px] text-gray-600">
-                Pricing shaped around page-count and complexity.
-              </div>
-            </article>
-
-            {/* Premium */}
-            <article className="flex flex-col rounded-2xl border border-gray-200 bg-gray-50/60 p-4">
-              <h3 className="text-md font-semibold text-gray-900">
-                Expanded &amp; Legacy
-              </h3>
-              <p className="mt-2 text-[13px] text-gray-700">
-                For large or multi-format works (e.g. expanded editions, workbooks,
-                or material to adapt for talks / TV / courses).
-              </p>
-              <ul className="mt-3 space-y-1 text-[13px] text-gray-800">
-                <li>Ã¢â‚¬Â¢ Complex layout &amp; long-form manuscripts</li>
-                <li>Ã¢â‚¬Â¢ Multiple formats (print, eBook, workbook)</li>
-                <li>Ã¢â‚¬Â¢ Slide / talk outline support where relevant</li>
-                <li>Ã¢â‚¬Â¢ Strategy session: how to use the book as a tool</li>
-              </ul>
-              <div className="mt-4 text-[12px] text-gray-600">
-                Scoped via discovery session with you.
-              </div>
-            </article>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_12px_34px_rgba(36,42,50,0.06)] sm:p-8">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold tracking-tight text-gray-900">Set up your book project</h2>
+            <p className="mt-1 text-sm leading-6 text-gray-600">Choose the formats you want to prepare. The checklist updates to match.</p>
           </div>
-        </div>
-
-        {/* Process + Intake */}
-        <div className="space-y-4">
-          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-200/70">
-            <h2 className="text-lg font-semibold text-gray-900">
-              How Scend Publishing works
-            </h2>
-            <ol className="mt-3 space-y-2 text-[13px] text-gray-700 list-decimal list-inside">
-              <li>
-                <span className="font-semibold">Share your manuscript</span> Ã¢â‚¬â€
-                even if it&apos;s messy. We sign an NDA if required.
-              </li>
-              <li>
-                <span className="font-semibold">We review &amp; respond</span> Ã¢â‚¬â€
-                you get a structured summary of what&apos;s needed (edit, layout,
-                cover, etc.).
-              </li>
-              <li>
-                <span className="font-semibold">We agree a package</span> Ã¢â‚¬â€
-                scoped around page-count, complexity and your goals.
-              </li>
-              <li>
-                <span className="font-semibold">You approve, we build</span> Ã¢â‚¬â€
-                we edit, structure and produce print-ready and digital files.
-              </li>
-              <li>
-                <span className="font-semibold">Support at launch</span> Ã¢â‚¬â€
-                basic launch copy ideas, and how to plug into your Scend tools.
-              </li>
-            </ol>
-          </div>
-
-          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-200/70">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Quick publishing intake
-            </h2>
-            <p className="mt-2 text-[13px] text-gray-700">
-              Use this as a checklist before you contact us. It helps speed up
-              quoting and keeps you in control of the process.
-            </p>
-
-            <div className="mt-3 grid gap-3 text-[13px]">
-              <label className="text-gray-900">
-                Working title
-                <input
-                  type="text"
-                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-pink-200"
-                  placeholder="e.g. Silent Pain: The Untold Struggles of..."
-                />
-              </label>
-
-              <label className="text-gray-900">
-                Approximate word count / page count
-                <input
-                  type="text"
-                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-pink-200"
-                  placeholder="e.g. 120k words / 800+ pages"
-                />
-              </label>
-
-              <label className="text-gray-900">
-                Current format
-                <select className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-pink-200">
-                  <option>Word document</option>
-                  <option>Google Docs</option>
-                  <option>PDF only</option>
-                  <option>Handwritten / mixed</option>
-                  <option>Other</option>
-                </select>
-              </label>
-
-              <label className="text-gray-900">
-                What do you want from this book?
-                <textarea
-                  rows={3}
-                  className="mt-1 w-full rounded-2xl border border-gray-200 px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-pink-200"
-                  placeholder="e.g. heal a specific community, support a talk, generate leads for a service, leave a legacy for family, etc."
-                />
-              </label>
+          <div className="space-y-4">
+            <label className={labelClass}>Working title<input className={inputClass} value={project.title} onChange={(e) => update("title", e.target.value)} maxLength={160} placeholder="Enter your book title" /></label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={labelClass}>Author name<input className={inputClass} value={project.author} onChange={(e) => update("author", e.target.value)} maxLength={100} placeholder="Name as it should appear on the book" /></label>
+              <label className={labelClass}>Genre or subject<input className={inputClass} value={project.genre} onChange={(e) => update("genre", e.target.value)} maxLength={100} placeholder="e.g. memoir, fiction, business" /></label>
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className={labelClass}>Current stage<select className={inputClass} value={project.stage} onChange={(e) => update("stage", e.target.value)}><option>Draft in progress</option><option>Draft complete</option><option>Editing and proofreading</option><option>Preparing book files</option><option>Ready to publish</option><option>Already published</option></select></label>
+              <label className={labelClass}>Approximate word count<input className={inputClass} type="number" min="0" step="100" value={project.wordCount} onChange={(e) => update("wordCount", e.target.value)} placeholder="e.g. 65000" /></label>
+            </div>
+            <label className={labelClass}>Publishing route<select className={inputClass} value={project.route} onChange={(e) => update("route", e.target.value)}><option>Not decided yet</option><option>Amazon KDP</option><option>Kobo Writing Life</option><option>Local print provider</option><option>Multiple distributors</option><option>Traditional publisher</option></select></label>
+            <fieldset>
+              <legend className={labelClass}>Formats to prepare</legend>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                {(["ebook", "print", "audio"] as Format[]).map((format) => <label key={format} className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm transition ${project.formats.includes(format) ? "border-pink-200 bg-pink-50/70 text-pink-900" : "border-gray-200 bg-white text-gray-700 hover:border-pink-200"}`}><input type="checkbox" className="accent-pink-600" checked={project.formats.includes(format)} onChange={() => toggleFormat(format)} />{formatName(format)}</label>)}
+              </div>
+            </fieldset>
+            <p className="text-xs leading-5 text-gray-500">Your plan is stored locally in this browser. It is not uploaded to Scend.</p>
+          </div>
+        </section>
 
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button
-                className={glowBtn(
-                  "text-white bg-pink-600 hover:bg-pink-700"
-                )}
-              >
-                Send details to Scend
-              </button>
-              <span className="self-center text-[11px] text-gray-600">
-                You can also email us directly with your manuscript attached.
-              </span>
+        <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-[0_12px_34px_rgba(36,42,50,0.06)] sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-pink-700">Your roadmap</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight text-gray-900">Publishing checklist</h2>
+            </div>
+            <div className="min-w-32 rounded-2xl bg-pink-50 px-4 py-3 text-right ring-1 ring-pink-100">
+              <div className="text-2xl font-bold text-pink-700">{progress}%</div>
+              <div className="text-xs text-gray-600">{completedCount} of {activeTasks.length} complete</div>
             </div>
           </div>
-        </div>
-      </section>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-pink-600 transition-all" style={{ width: `${progress}%` }} /></div>
 
-      {/* Disclaimer */}
-      <section className="rounded-3xl border border-gray-200 bg-white/60 p-4">
-        <p className="text-[12.5px] leading-relaxed text-gray-700">
-          <strong>Note:</strong> Scend Publishing is flexible. We can work only
-          on editing, only on layout, or on the full journey from raw draft to
-          live book. Pricing is always agreed in advance and aligned with what
-          you actually need Ã¢â‚¬â€ no surprise add-ons.
-        </p>
-      </section>
+          {nextTask && <div className="mt-5 rounded-2xl border border-pink-100 bg-gradient-to-r from-pink-50 to-white p-4"><p className="text-xs font-semibold uppercase tracking-wide text-pink-700">Suggested next step</p><p className="mt-1 font-semibold text-gray-900">{nextTask.title}</p><p className="mt-1 text-sm leading-6 text-gray-600">{nextTask.detail}</p></div>}
+          {!nextTask && <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">You have completed every item in this plan. Review the final files and distributor requirements before release.</div>}
+
+          <div className="mt-5 space-y-5">
+            {groups.map((group) => (
+              <div key={group}>
+                <h3 className="mb-2 text-sm font-semibold text-gray-900">{group}</h3>
+                <div className="space-y-2">
+                  {activeTasks.filter((task) => task.group === group).map((task) => {
+                    const done = project.completed.includes(task.id);
+                    return <label key={task.id} className={`flex cursor-pointer gap-3 rounded-xl border p-3.5 transition ${done ? "border-pink-100 bg-pink-50/50" : "border-gray-100 hover:border-pink-200 hover:shadow-[0_8px_20px_rgba(230,0,126,0.08)]"}`}><input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-pink-600" checked={done} onChange={() => toggleTask(task.id)} /><span><span className={`block text-sm font-semibold ${done ? "text-pink-800" : "text-gray-900"}`}>{task.title}</span><span className="mt-1 block text-xs leading-5 text-gray-600">{task.detail}</span></span></label>;
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2 border-t border-gray-100 pt-5">
+            <button type="button" className={`${buttonClass} bg-pink-700 text-white shadow-[0_8px_22px_rgba(230,0,126,0.20)] hover:-translate-y-0.5 hover:bg-pink-800 hover:shadow-[0_12px_28px_rgba(230,0,126,0.28)]`} onClick={downloadPlan}>Download plan</button>
+            <button type="button" className={`${buttonClass} bg-white text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50`} onClick={copyPlan}>Copy plan</button>
+            <button type="button" className={`${buttonClass} bg-white text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50`} onClick={() => contactScend("email")}>Email Scend</button>
+            <button type="button" className={`${buttonClass} bg-white text-gray-800 ring-1 ring-gray-200 hover:bg-gray-50`} onClick={() => contactScend("whatsapp")}>WhatsApp Scend</button>
+            <button type="button" className={`${buttonClass} text-gray-500 hover:bg-gray-50 hover:text-gray-900`} onClick={clearProject}>Clear project</button>
+          </div>
+          {notice && <p className="mt-4 rounded-xl border border-pink-100 bg-pink-50 px-4 py-3 text-sm text-pink-900" role="status" aria-live="polite">{notice}</p>}
+        </section>
+      </div>
+
+      <p className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-xs leading-6 text-gray-600">Publishing specifications, ISBN rules, pricing, and file requirements can change by distributor and format. Treat this planner as a preparation guide and confirm the current requirements with your chosen platform or printer.</p>
     </div>
   );
 }
-
-

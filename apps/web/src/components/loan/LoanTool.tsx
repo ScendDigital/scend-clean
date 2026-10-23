@@ -448,7 +448,7 @@ export default function LoanTool() {
                   value={f.ageYears}
                   onChange={(e) => setF((v) => ({ ...v, ageYears: Number(e.target.value) }))}
                 />
-                <span className="mt-1 block text-[12px] text-gray-700">Term should end â‰¤ age {MAX_END_AGE}.</span>
+                <span className="mt-1 block text-[12px] text-gray-700">Term should end at or before age {MAX_END_AGE}.</span>
               </label>
             </div>
 
@@ -682,7 +682,7 @@ export default function LoanTool() {
             <p className="text-[12.5px] leading-relaxed text-gray-700">
               <strong>Disclaimer:</strong> This tool provides an educational estimate only. It is not financial advice.
               All outcomes remain subject to the National Credit Act (NCA), lender policies, supporting documents,
-              affordability assessments and credit checks. Actual results may differ from a lenderâ€™s assessment.
+              affordability assessments and credit checks. Actual results may differ from a lender's assessment.
               Scend Pty Ltd does not store your personal data unless you explicitly choose to send your results via email.
             </p>
           </div>

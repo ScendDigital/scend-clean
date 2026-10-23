@@ -4,27 +4,10 @@ import ResultShareButton from "@/components/ResultShareButton";
 
 import * as React from "react";
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   UIF Rules (Dept of Labour fact-sheets, summarized)
-
-   Unemployment:
-   - Monthly ceiling (UIF) applied: UIF_MONTHLY_CEILING
-   - Daily income Y1 = min(avg monthly, ceiling) * 12 / 365
-   - IRR% = 29.2 + (7173.92 / (232.92 + Y1))
-   - Daily Benefit Amount (DBA) = Y1 * IRR%
-   - Credits: 1 day credit for every 4 days worked (max 365 over 4 years)
-   - Total benefit â‰ˆ DBA * credit days
-
-   Illness / Maternity / Adoption / Parental / RWT:
-   - Benefit = 66% of income capped at UIF ceiling
-   - Paid as daily amount (dailyFromMonthly)
-   - Top-up (RWT & partial-pay leave): min(daily income diff, DBA)
-
-   Dependants:
-   - Lump-sum style; this tool provides forms & checklist, not a formula.
-
-   These are approximations for guidance, not official determinations.
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/*
+   UIF estimate rules summarized from Department of Employment and Labour guidance.
+   All displayed amounts are estimates and are subject to UIF eligibility and approval.
+*/
 
 type ClaimType =
   | "Unemployment"
@@ -62,9 +45,7 @@ function irrPercentFromY1(y1Daily: number) {
   return 29.2 + 7173.92 / (232.92 + y1Daily);
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   Benefit calculators
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Benefit calculators */
 
 function calcUnemployment({
   avgMonthly,
@@ -132,9 +113,7 @@ function calcSixtySixPercentDaily({
   };
 }
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   Forms & links
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Forms & links */
 
 type Link = { label: string; href: string };
 
@@ -183,19 +162,17 @@ const LINKS: Record<string, Link[]> = {
   ],
   Dependants: [
     {
-      label: "UI-2.5: Dependantâ€™s Benefits (Spouse / Life Partner) (PDF)",
+      label: "UI-2.5: Dependants Benefits (Spouse / Life Partner) (PDF)",
       href: "https://www.labour.gov.za/DocumentCenter/Publications/Unemployment%20Insurance%20Fund/UI.2.5%20Form%20UI-2.5%20-%20Application%20for%20dependant%27s%20benefits%20by%20surviving%20spouse%20or%20life%20partner.pdf",
     },
     {
-      label: "UI-2.6: Dependantâ€™s Benefits (Other Dependants / Children) (PDF)",
+      label: "UI-2.6: Dependants Benefits (Other Dependants / Children) (PDF)",
       href: "https://www.labour.gov.za/DocumentCenter/Forms/Unemployment%20Insurance%20Fund/UI-2-6-dependants-benefits-other-than-spouse.pdf",
     },
   ],
 };
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   Checklists per claim type
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Checklists per claim type */
 
 const CHECKLIST: Record<ClaimType, string[]> = {
   Unemployment: [
@@ -225,7 +202,7 @@ const CHECKLIST: Record<ClaimType, string[]> = {
     "ID/Passport",
     "UI-2.3 (Application for Maternity)",
     "UI-4 (Continuation of Maternity payments)",
-    "Childâ€™s birth certificate or medical confirmation of due date",
+    "Child's birth certificate or medical confirmation of due date",
     "UI-2.8 (Bank details, stamped)",
     "UI-2.7 (if employer pays partial income)",
   ],
@@ -238,24 +215,22 @@ const CHECKLIST: Record<ClaimType, string[]> = {
   ],
   Parental: [
     "ID/Passport",
-    "Childâ€™s birth certificate",
+    "Child's birth certificate",
     "Proof of parental leave from employer",
     "UI-2.8 (Bank details, stamped)",
     "UI-2.7 (if partial income)",
   ],
   "Dependants / Death": [
-    "Deceasedâ€™s ID / Passport",
+    "Deceased's ID / Passport",
     "Death certificate",
     "UI-2.5 or UI-2.6 (depending on relationship)",
     "Proof of relationship (marriage certificate / birth certificate)",
     "UI-2.8 (Bank details of claimant, stamped)",
-    "Deceasedâ€™s UI-19 / employer confirmation if available",
+    "Deceased's UI-19 / employer confirmation if available",
   ],
 };
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-   Component
-   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Component */
 
 export default function UifTool() {
   const [claimType, setClaimType] = React.useState<ClaimType>("Unemployment");
@@ -306,8 +281,8 @@ export default function UifTool() {
 
     if (claimType === "Reduced Work Time") {
       notes.push(
-        "Reduced Work Time: UIF top-up = min(daily salary difference, UIF daily benefit).",
-        "If employer income already exceeds UIF benefit, top-up may be zero."
+        "Reduced Work Time: this is an indicative top-up estimate using the daily income difference, capped at the estimated daily benefit.",
+        "UIF guidance describes the Reduced Work Time rule as transitional; confirm the current treatment with UIF before relying on this estimate."
       );
     } else if (claimType === "Maternity") {
       notes.push("Maternity: Benefit is 66% of income capped at UIF ceiling; continuation via UI-4.");
@@ -317,8 +292,8 @@ export default function UifTool() {
       notes.push("Adoption: 66% capped benefit for the adoption leave period.");
     } else if (claimType === "Parental") {
       notes.push(
-        "Parental: 66% capped benefit for the short parental leave (days).",
-        "Use expected leave days as a planning reference only."
+        "Parental: the daily benefit is capped at 66% of contributable income; the entered days provide an illustrative payout estimate only.",
+        "UIF determines the eligible days and final amount."
       );
     } else if (claimType === "Dependants / Death") {
       notes.push(
@@ -333,9 +308,14 @@ export default function UifTool() {
       type: claimType,
       dailyBenefit: sixtySix.dailyBenefit,
       monthlyBenefitApprox: sixtySix.monthlyBenefitApprox,
+      monthlyTopUpApprox: sixtySix.topUpPaid * 30,
       dailyIncomeActual: sixtySix.dailyIncomeActual,
       dailyInService: sixtySix.dailyInService,
       dailyTopUpPaid: sixtySix.topUpPaid,
+      expectedLeaveDays: claimType === "Parental" ? Math.max(0, inputs.expectedLeaveDays) : 0,
+      expectedLeavePayout: claimType === "Parental"
+        ? sixtySix.topUpPaid * Math.max(0, inputs.expectedLeaveDays)
+        : 0,
       notes,
     });
     setDirty(false);
@@ -382,11 +362,20 @@ export default function UifTool() {
     } else {
       body.push(
         ["Daily benefit (66% capped)", ZAR(result.dailyBenefit)],
-        ["Estimated monthly benefit", ZAR(result.monthlyBenefitApprox)],
+        ["Estimated monthly benefit before employer-income top-up", ZAR(result.monthlyBenefitApprox)],
         ["Daily income actual (for comparison)", ZAR(result.dailyIncomeActual)],
         ["Daily income while on leave/RWT", ZAR(result.dailyInService)],
-        ["Daily top-up (min(diff, DBA))", ZAR(result.dailyTopUpPaid)]
+        ["Estimated daily top-up", ZAR(result.dailyTopUpPaid)]
       );
+      if (result.dailyInService > 0) {
+        body.push(["Estimated monthly top-up", ZAR(result.monthlyTopUpApprox)]);
+      }
+      if (result.type === "Parental" && result.expectedLeaveDays > 0) {
+        body.push([
+          `Estimated payout for ${result.expectedLeaveDays} entered days`,
+          ZAR(result.expectedLeavePayout),
+        ]);
+      }
     }
 
     if (result.notes?.length) {
@@ -439,7 +428,7 @@ export default function UifTool() {
       autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 16,
         styles: { fontSize: 10, cellPadding: 6, halign: "left" },
-        head: [[`${result.type} â€“ Required documents`]],
+        head: [[`${result.type} - Required documents`]],
         body: ck.map((c) => [c]),
         theme: "plain",
       });
@@ -633,7 +622,7 @@ export default function UifTool() {
                       }
                     />
                     <span className="mt-1 block text-[12px] text-gray-700">
-                      For planning; total payout = daily benefit Ã— days actually approved.
+                      For planning only; estimated payout is the daily top-up multiplied by the days entered. Actual payable days are determined by UIF.
                     </span>
                   </label>
                 )}
@@ -779,9 +768,21 @@ export default function UifTool() {
                 <span>{ZAR(result.dailyBenefit)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Estimated monthly benefit</span>
+                <span>Estimated monthly benefit before employer-income top-up</span>
                 <span>{ZAR(result.monthlyBenefitApprox)}</span>
               </div>
+              {result.dailyInService > 0 && (
+                <div className="flex items-center justify-between">
+                  <span>Estimated monthly top-up</span>
+                  <span>{ZAR(result.monthlyTopUpApprox)}</span>
+                </div>
+              )}
+              {result.type === "Parental" && result.expectedLeaveDays > 0 && (
+                <div className="flex items-center justify-between">
+                  <span>Estimated payout for {result.expectedLeaveDays} entered days</span>
+                  <span>{ZAR(result.expectedLeavePayout)}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span>Daily income actual</span>
                 <span>{ZAR(result.dailyIncomeActual)}</span>
