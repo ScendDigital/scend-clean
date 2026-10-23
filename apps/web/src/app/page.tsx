@@ -48,11 +48,11 @@ const tools = [
   {
     title: "Publishing",
     description:
-      "Resources and practical guidance for authors and creators.",
+      "Plan your book project with a practical publishing checklist for eBook, print and audiobook editions.",
     href: "/publishing",
-    label: "In development",
+    label: "Open Publishing Tool",
     Icon: BookOpen,
-    available: false,
+    available: true,
   },
 ];
 
@@ -122,14 +122,12 @@ export default function Home() {
                 <p className="mt-2 min-h-12 text-sm leading-6 text-gray-600">
                   {description}
                 </p>
-                <span
-                  className={`mt-5 inline-flex items-center gap-2 text-sm font-semibold ${
-                    available ? "text-pink-700" : "text-gray-500"
-                  }`}
-                >
-                  {label}
-                  {available && <ArrowRight aria-hidden="true" size={16} />}
-                </span>
+                {available && (
+                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-pink-700">
+                    {label}
+                    <ArrowRight aria-hidden="true" size={16} />
+                  </span>
+                )}
               </>
             );
 
