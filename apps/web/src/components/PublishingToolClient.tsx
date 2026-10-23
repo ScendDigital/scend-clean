@@ -6,7 +6,7 @@ const PublishingTool = dynamic(() => import("@/tools/PublishingTool"), {
   ssr: false,
   loading: () => (
     <div className="flex h-48 items-center justify-center text-gray-600">
-      Loading Scend PublishingÃ¢â‚¬Â¦
+      Loading Scend Publishing...
     </div>
   ),
 });

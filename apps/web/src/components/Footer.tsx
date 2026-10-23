@@ -15,6 +15,7 @@ export default function Footer() {
             <div><a href="/price-compare" className="hover:text-pink-600 transition">Price Compare Tool</a></div>
             <div><a href="/publishing" className="hover:text-pink-600 transition">Publishing</a></div>
             <div><a href="/about" className="hover:text-pink-600 transition">About Us</a></div>
+            <div><a href="/directors" className="hover:text-pink-600 transition">Our Directors</a></div>
             <div><a href="/contact" className="hover:text-pink-600 transition">Contact Us</a></div>
           </div>
         </div>
