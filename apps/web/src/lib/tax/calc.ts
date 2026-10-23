@@ -34,16 +34,25 @@ const MTC_2026 = { taxpayer: 376, firstDependant: 376, additionalDependant: 254 
 
 function clamp(n: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, n)); }
 
-function ageFromSouthAfricanID(id: string, asOf: Date): number {
+function ageFromSouthAfricanID(id: string, asOf: Date): number | null {
+  if (!/^\d{13}$/.test(id)) return null;
   const yy = parseInt(id.slice(0, 2), 10);
   const mm = parseInt(id.slice(2, 4), 10) - 1;
   const dd = parseInt(id.slice(4, 6), 10);
-  const year = yy <= 25 ? 2000 + yy : 1900 + yy;
+  const asOfYear = asOf.getUTCFullYear();
+  const candidateYears = [1900 + yy, 2000 + yy, 2100 + yy]
+    .filter((year) => year <= asOfYear && year >= asOfYear - 120)
+    .sort((a, b) => b - a);
+  const year = candidateYears.find((candidate) => {
+    const date = new Date(Date.UTC(candidate, mm, dd));
+    return date.getUTCFullYear() === candidate && date.getUTCMonth() === mm && date.getUTCDate() === dd;
+  });
+  if (year === undefined) return null;
   const dob = new Date(Date.UTC(year, mm, dd));
   let age = asOf.getUTCFullYear() - dob.getUTCFullYear();
   const m = asOf.getUTCMonth() - dob.getUTCMonth();
   if (m < 0 || (m === 0 && asOf.getUTCDate() < dob.getUTCDate())) age--;
-  return age;
+  return age >= 0 ? age : null;
 }
 
 function taxBeforeRebates(taxable: number, brackets = BRACKETS): number {
@@ -114,8 +123,9 @@ export function calculateAnnualPAYE(input: {
   const asOf = TABLES[year].asOf;
   const daysInYear = input.yearDaysInYear ?? TABLES[year].daysInYear;
 
-  const idProvided = !!input.idNumber && input.idNumber.length >= 6;
-  const age = idProvided ? ageFromSouthAfricanID(input.idNumber!, asOf) : 0;
+  const parsedAge = input.idNumber ? ageFromSouthAfricanID(input.idNumber, asOf) : null;
+  const idProvided = parsedAge !== null;
+  const age = parsedAge ?? 0;
 
   // Bases
   const travelPAYEIncl = (input.deem80BusinessUse ? 0.20 : 0.80) * (input.travelAllowanceAnnual || 0);
@@ -154,11 +164,38 @@ export function calculateAnnualPAYE(input: {
   // After credits (full annual)
   const taxAfterCredits = Math.max(0, taxAfterRebates - mtcAnnual - amtc);
 
-  // ---- Monthly baselines ----
-  // Employers generally exclude AMTC from PAYE; expose both for the UI.
-  const monthlyPAYE_with_AMTC = taxAfterCredits / 12;
-  const monthlyPAYE_without_AMTC = Math.max(0, (taxAfterRebates - mtcAnnual) / 12);
-
+  // ---- Monthly PAYE baselines ----
+  // PAYE includes only the taxable portion of a travel allowance. The annual
+  // assessment above uses the full allowance because no business-travel logbook
+  // deduction is entered in this estimator.
+  const retirementAllowedForPAYE = allowedRetirementDeduction(
+    remunerationPAYE,
+    input.retirementContribAnnual || 0,
+    retirementCap
+  );
+  const taxableIncomeForPAYE = Math.max(0, remunerationPAYE - retirementAllowedForPAYE);
+  const taxBeforeRebatesForPAYE = taxBeforeRebates(taxableIncomeForPAYE, activeBrackets);
+  const taxAfterRebatesForPAYE = Math.max(0, taxBeforeRebatesForPAYE - rebates);
+  // For taxpayers aged 65+, estimate the contribution-related AMTC in PAYE.
+  // Monthly mode does not collect out-of-pocket medical expenses.
+  const amtcForPAYE = age >= 65
+    ? annualAMTC({
+        age,
+        disabled: !!input.disabled,
+        taxableIncome: taxableIncomeForPAYE,
+        medContribAnnual,
+        mtcAnnual,
+        medOutOfPocketAnnual: 0,
+      })
+    : 0;
+  const monthlyPAYE_with_AMTC = Math.max(
+    0,
+    taxAfterRebatesForPAYE - mtcAnnual - amtcForPAYE
+  ) / 12;
+  const monthlyPAYE_without_AMTC = Math.max(
+    0,
+    taxAfterRebatesForPAYE - mtcAnnual
+  ) / 12;
   // ---- Pro-rata: Annual (by days) ----
   let annualProrationFactorDays = 1;
   let annualTaxProratedDays = taxAfterCredits;
