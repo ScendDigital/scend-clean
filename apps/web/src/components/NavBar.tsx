@@ -43,6 +43,8 @@ export default function NavBar() {
               ))}
             </div>
           </details>
+          <Link href="/services" className={linkClass}>Our Services</Link>
+          <Link href="/publishing" className={linkClass}>Publishing</Link>
           <Link href="/about" className={linkClass}>About</Link>
           <Link href="/directors" className={linkClass}>Directors</Link>
           <Link href="/contact" className={linkClass}>Contact</Link>
