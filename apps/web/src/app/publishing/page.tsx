@@ -1,4 +1,4 @@
-import PublishingToolClient from "@/components/PublishingToolClient";
+﻿
 import Image from "next/image";
 
 const publishedBooks = [
@@ -7,7 +7,7 @@ const publishedBooks = [
     cover: "/books/silent-pain-cover.jpg",
     alt: "Cover of Silent Pain by Motlatsi Charles Lenyatsa",
     description:
-      "A compelling look at the often-unspoken struggles of South Africa's Black men—and the strength it takes to break the silence.",
+      "A compelling look at the often-unspoken struggles of South Africa's Black menâ€”and the strength it takes to break the silence.",
     amazonUrl: "https://www.amazon.com/s?k=9781049202013",
   },
   {
@@ -79,7 +79,50 @@ export default function PublishingPage() {
             ))}
           </ul>
         </section>
-        <PublishingToolClient />
+                <section className="rounded-3xl border border-pink-100 bg-white p-6 shadow-sm sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-widest text-pink-700">
+            Professional Publishing Services
+          </p>
+
+          <h2 className="mt-3 text-2xl font-bold text-gray-900">
+            Your Story. Our Expertise. Published.
+          </h2>
+
+          <p className="mt-4 max-w-3xl leading-7 text-gray-600">
+            Scend Publishing provides tailored support for authors
+            who want professional assistance preparing their books
+            for publication.
+          </p>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              "Manuscript Editing",
+              "Proofreading",
+              "Book Cover Design",
+              "Paperback and eBook Formatting",
+              "ISBN and Metadata Assistance",
+              "Publishing and Distribution Support"
+            ].map((service) => (
+              <div
+                key={service}
+                className="rounded-2xl border border-gray-200 bg-gray-50 p-5"
+              >
+                <h3 className="font-semibold text-gray-900">
+                  {service}
+                </h3>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8">
+            <a
+              href="/publishing-services#quote"
+              className="inline-flex rounded-xl bg-pink-600 px-6 py-3 font-semibold text-white transition hover:bg-pink-700"
+            >
+              Request a Publishing Quote
+            </a>
+          </div>
+        </section>
       </div>
     </main>
   );
