@@ -7,7 +7,7 @@ const toolLinks = [
   { label: "Loan Tool", href: "/loan" },
   { label: "UIF Tool", href: "/uif" },
   { label: "Price Compare", href: "/price-compare" },
-  { label: "Publishing", href: "/publishing" },
+
 ];
 
 const linkClass =
